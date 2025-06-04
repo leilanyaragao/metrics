@@ -14,7 +14,7 @@ import { Calculator, History, TrendingUp, Info, Users, X } from "lucide-react"
 import axios from "axios"
 import { Value } from "@radix-ui/react-select"
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NDg5MjgyNzMsImlhdCI6MTc0ODkxMzg3M30.Uirw-Ms-TODeu3Ha1Z2blr1KQTVC43oVBEEREueqt0jN5hEfPFeZMGO70salKfrX3jxNgNBzSVI6Eq4Ar3CsIQ"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NDkwMTIwMTksImlhdCI6MTc0ODk5NzYxOX0.2wOLmC-QFlg1EJ6bjyqXcCN28wCmNCiGWmzWj3z-_fdcq5Cj9iQoBd65zs-QeAOguwCa3HQlbE5nQ55bTWIkfg"
 
 interface AnalysisHistory {
   id: string
@@ -28,6 +28,18 @@ interface AnalysisHistory {
   periodicidade?: string
 }
 
+interface RangeDatesICP {
+  map_id: string
+  convergence_point: boolean 
+  divergence_point: boolean
+  essay_point: boolean
+  dynamic_weights: boolean
+  weight_x: number
+  weight_y: number
+  start_date: Date
+  end_date: Date
+}
+
 interface Student {
   id: string
   name: string
@@ -37,8 +49,8 @@ interface Student {
 export default function MetricsDashboard() {
   const [showResults, setShowResults] = useState(false)
   const [activeMetric, setActiveMetric] = useState<"ICP" | "IAE">("ICP")
-  const [selectedJourney, setSelectedJourney] = useState("")
-  const [selectedMap, setSelectedMap] = useState("")
+  const [selectedJourney, setSelectedJourney] = useState<any>(null)
+  const [selectedMap, setSelectedMap] = useState<any>(null)
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [pointTypes, setPointTypes] = useState({
@@ -107,10 +119,11 @@ export default function MetricsDashboard() {
   },
   [])
 
-
-
   const [maps, setMaps] = useState<any[]> ([])
-
+  useEffect(()=> {
+   setMaps(journeys.find(item=>item.id === selectedJourney.id)?.maps??[])
+  },
+  [selectedJourney])
   
   // Handle ICP weight changes to maintain 100% total
   const handleICPWeightChange = (type: "GAP" | "RPP", value: number[]) => {
@@ -158,8 +171,8 @@ export default function MetricsDashboard() {
   const handleCollectionTypeChange = (newType: "range" | "periodica") => {
     setCollectionType(newType)
     // Reset configuration data
-    setSelectedJourney("")
-    setSelectedMap("")
+    setSelectedJourney(null)
+    setSelectedMap(null)
     setStartDate("")
     setEndDate("")
     setStartTime("")
@@ -173,10 +186,26 @@ export default function MetricsDashboard() {
     if (selectedJourney && selectedMap && startDate && (collectionType === "range" ? endDate : startTime)) {
       // Only add to history if it's range de datas
       if (collectionType === "range") {
+        const newRangeDatesICP: RangeDatesICP = {
+          map_id: selectedMap.id,
+          convergence_point: pointTypes.decisao,
+          divergence_point: pointTypes.debate,
+          essay_point: pointTypes.avaliacao,
+          dynamic_weights: dynamicWeights,
+          weight_x: icpWeights.pesoGAP[0],
+          weight_y: icpWeights.pesoRPP[0],
+          start_date: new Date(startDate),
+          end_date: new Date(endDate),
+        }
+
+        axios.post("http://localhost:8095/v1/map/metrics/participation-consistency-index", 
+          newRangeDatesICP, 
+          {headers:{Authorization:`Bearer ${acessToken}`}})
+
         const newAnalysis: AnalysisHistory = {
           id: Date.now().toString(),
-          journey: selectedJourney,
-          map: selectedMap,
+          journey: selectedJourney.title,
+          map: selectedMap.title,
           date: new Date().toLocaleDateString("pt-BR"),
           period: `${startDate} - ${endDate}`,
           result: Math.floor(Math.random() * 40) + 40,
@@ -425,7 +454,7 @@ export default function MetricsDashboard() {
                 {/* Journey Selection */}
                 <div>
                   <Label className="text-sm font-medium">Jornada</Label>
-                  <Select value={selectedJourney} onValueChange={setSelectedJourney}>
+                  <Select value={selectedJourney?.id} onValueChange={(value)=>setSelectedJourney(journeys.find(item=>item.id===value))}>
                     <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Selecione a jornada" />
                     </SelectTrigger>
@@ -443,18 +472,14 @@ export default function MetricsDashboard() {
                 {selectedJourney && (
                   <div>
                     <Label className="text-sm font-medium">Mapa</Label>
-                    <Select value={selectedMap} onValueChange={(id) => {
-    const journey = journeys.find(j => j.id === id);
-    setSelectedJourney(journey || null);
-    setMaps(journey?.maps || []);
-  }}>
+                    <Select value={selectedMap?.id} onValueChange={(value)=>setSelectedMap(maps.find(item=>item.id===value))}>
                       <SelectTrigger className="mt-2">
                         <SelectValue placeholder="Selecione o mapa" />
                       </SelectTrigger>
                       <SelectContent>
                         {maps.map((map) => (
-                          <SelectItem key={map} value={map}>
-                            {map}
+                          <SelectItem key={map.id} value={map.id}>
+                            {map.title}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -626,7 +651,10 @@ export default function MetricsDashboard() {
                     {collectionType === "range" ? "Análise por Range de Datas" : `Análise Periódica - ${periodicidade}`}
                   </p>
                   <p className="text-xs opacity-75">
-                    Jornada: {currentHistoryItem ? currentHistoryItem.journey : selectedJourney}
+                    Jornada: {currentHistoryItem ? currentHistoryItem.journey : selectedJourney.title}
+                  </p>
+                  <p className="text-xs opacity-75">
+                    Jornada: {currentHistoryItem ? currentHistoryItem.map : selectedMap.title}
                   </p>
                 </div>
 
