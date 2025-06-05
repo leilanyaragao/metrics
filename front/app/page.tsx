@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,19 +13,21 @@ import { Switch } from "@/components/ui/switch"
 import { Calculator, History, TrendingUp, Info, Users, X } from "lucide-react"
 import axios from "axios"
 import { Value } from "@radix-ui/react-select"
+import { List } from "postcss/lib/list"
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NDkwMTIwMTksImlhdCI6MTc0ODk5NzYxOX0.2wOLmC-QFlg1EJ6bjyqXcCN28wCmNCiGWmzWj3z-_fdcq5Cj9iQoBd65zs-QeAOguwCa3HQlbE5nQ55bTWIkfg"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NDkwOTQ4MjQsImlhdCI6MTc0OTA4MDQyNH0.6EHcMri6oe2FzDEg-He3juScpKByzhbL77LqAuSfe68AgCMOFQOKYav1IU5yleme607Cvzr4An25G0JEqjMLYQ"
 
 interface AnalysisHistory {
   id: string
-  journey: string
-  map: string
+  journey: any
+  map: any
   date: string
   period: string
   result: number
   type: "ICP" | "IAE"
   collectionType: "range" | "periodica"
   periodicidade?: string
+  students: Student[]
 }
 
 interface RangeDatesICP {
@@ -40,10 +42,24 @@ interface RangeDatesICP {
   end_date: Date
 }
 
+interface RangeDatesIAE {
+  map_id: string
+  convergence_point: boolean 
+  divergence_point: boolean
+  essay_point: boolean
+  dynamic_weights: boolean
+  weight_x: number
+  weight_y: number
+  start_date: Date
+  end_date: Date
+}
+
 interface Student {
   id: string
   name: string
-  average: number
+  averageRPP: number
+  averageGAP: number
+  averageICP: number
 }
 
 export default function MetricsDashboard() {
@@ -59,6 +75,8 @@ export default function MetricsDashboard() {
     decisao: false,
   })
 
+
+
   // ICP weights (GAP and RPP) - linked sliders
   const [icpWeights, setIcpWeights] = useState({
     pesoGAP: [50],
@@ -73,41 +91,12 @@ export default function MetricsDashboard() {
   })
 
   // Student selection for ICP
-  const [availableStudents] = useState<Student[]>([
-    { id: "1", name: "Maria Oliveira", average: 61 },
-    { id: "2", name: "Rafael Lima", average: 39 },
-    { id: "3", name: "Bruno Santos", average: 74 },
-    { id: "4", name: "Eduardo Lima", average: 45 },
-    { id: "5", name: "Ana Costa", average: 68 },
-    { id: "6", name: "Pedro Silva", average: 52 },
-  ])
+  const [availableStudents, setAvailableStudents] = useState<Student[]>([])
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([])
-  const [turmaAverage] = useState(53)
+  const [turmaAverage, setTurmaAvarage] = useState()
 
   // Only store history for range de datas
-  const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistory[]>([
-    {
-      id: "1",
-      journey: "Mapa Conceitual 2",
-      map: "Bloco Principal",
-      date: "15/08/2023",
-      period: "15/08/2023 - 15/09/2023",
-      result: 53,
-      type: "ICP",
-      collectionType: "range",
-    },
-    {
-      id: "2",
-      journey: "Mapa Conceitual 1",
-      map: "Bloco Principal",
-      date: "10/08/2023",
-      period: "10/08/2023 - 10/09/2023",
-      result: 67,
-      type: "IAE",
-      collectionType: "range",
-    },
-  ])
-
+  const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistory[]>([])
   const [currentHistoryItem, setCurrentHistoryItem] = useState<AnalysisHistory | null>(null)
 
   const [journeys, setJourneys] = useState<any[]> (
@@ -120,8 +109,9 @@ export default function MetricsDashboard() {
   [])
 
   const [maps, setMaps] = useState<any[]> ([])
+  
   useEffect(()=> {
-   setMaps(journeys.find(item=>item.id === selectedJourney.id)?.maps??[])
+   setMaps(journeys.find(item=>item.id === selectedJourney?.id)?.maps??[])
   },
   [selectedJourney])
   
@@ -166,6 +156,7 @@ export default function MetricsDashboard() {
     activeMetric === "ICP" ? "range" : "periodica",
   )
   const [startTime, setStartTime] = useState("")
+  const [endTime, setEndTime] = useState("")
 
   // Reset configuration when changing collection type
   const handleCollectionTypeChange = (newType: "range" | "periodica") => {
@@ -176,6 +167,7 @@ export default function MetricsDashboard() {
     setStartDate("")
     setEndDate("")
     setStartTime("")
+    setEndTime("")
     setPeriodicidade("Anual")
     setSelectedStudents([])
     setShowResults(false)
@@ -185,7 +177,7 @@ export default function MetricsDashboard() {
   const handleCalculate = () => {
     if (selectedJourney && selectedMap && startDate && (collectionType === "range" ? endDate : startTime)) {
       // Only add to history if it's range de datas
-      if (collectionType === "range") {
+      if (collectionType === "range" && activeMetric === "ICP") {
         const newRangeDatesICP: RangeDatesICP = {
           map_id: selectedMap.id,
           convergence_point: pointTypes.decisao,
@@ -200,20 +192,69 @@ export default function MetricsDashboard() {
 
         axios.post("http://localhost:8095/v1/map/metrics/participation-consistency-index", 
           newRangeDatesICP, 
+          {headers:{Authorization:`Bearer ${acessToken}`}}).
+          then(response=>{
+            const students = response.data.participation_consistency_per_users.map((value:any)=>({
+              id: value.user_id,
+              name: value.user_name,
+              averageRPP: value.user_average_rpp,
+              averageGAP: value.user_average_gap,
+              averageICP: value.user_average_icp
+            }))
+            setAvailableStudents(students)
+            setTurmaAvarage(response.data.class_average_icp)
+
+            const newAnalysis: AnalysisHistory = {
+              id: Date.now().toString(),
+              journey: selectedJourney,
+              map: selectedMap,
+              date: response.data.created_at,
+              period: `${startDate} - ${endDate}`,
+              result: response.data.class_average_icp,
+              type: activeMetric,
+              collectionType,
+              students
+            }
+            
+            setAnalysisHistory([newAnalysis, ...analysisHistory])
+            setCurrentHistoryItem(newAnalysis)
+            setSelectedStudents([])
+          })
+      }
+
+      //Calcular IAE
+      if (collectionType === "range" && activeMetric === "IAE") {
+        const newRangeDatesIAE: RangeDatesIAE = {
+          map_id: selectedMap.id,
+          convergence_point: pointTypes.decisao,
+          divergence_point: pointTypes.debate,
+          essay_point: pointTypes.avaliacao,
+          dynamic_weights: dynamicWeights,
+          weight_x: icpWeights.pesoGAP[0],
+          weight_y: icpWeights.pesoRPP[0],
+          start_date: new Date(startDate),
+          end_date: new Date(endDate),
+        }
+
+        axios.post("http://localhost:8095/v1/map/metrics/structured-dropout-index", 
+          newRangeDatesIAE, 
           {headers:{Authorization:`Bearer ${acessToken}`}})
 
         const newAnalysis: AnalysisHistory = {
           id: Date.now().toString(),
-          journey: selectedJourney.title,
-          map: selectedMap.title,
+          journey: selectedJourney,
+          map: selectedMap,
           date: new Date().toLocaleDateString("pt-BR"),
           period: `${startDate} - ${endDate}`,
           result: Math.floor(Math.random() * 40) + 40,
           type: activeMetric,
           collectionType,
+          students: []
         }
         setAnalysisHistory([newAnalysis, ...analysisHistory])
       }
+
+
       setCurrentHistoryItem(null)
       setShowResults(true)
     }
@@ -227,6 +268,8 @@ export default function MetricsDashboard() {
     setSelectedJourney(analysis.journey)
     setSelectedMap(analysis.map)
     setShowResults(true)
+    setSelectedStudents([])
+    setAvailableStudents(analysis.students)
   }
 
   const addStudent = (student: Student) => {
@@ -447,6 +490,30 @@ export default function MetricsDashboard() {
                           className="mt-1"
                         />
                       </div>
+                      <div>
+                        <Label htmlFor="end-date-periodic" className="text-xs text-gray-500">
+                          Data Término
+                        </Label>
+                        <Input
+                          id="end-date-periodic"
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="end-time" className="text-xs text-gray-500">
+                          Hora de Término
+                        </Label>
+                        <Input
+                          id="end-time"
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => endTime(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -651,10 +718,10 @@ export default function MetricsDashboard() {
                     {collectionType === "range" ? "Análise por Range de Datas" : `Análise Periódica - ${periodicidade}`}
                   </p>
                   <p className="text-xs opacity-75">
-                    Jornada: {currentHistoryItem ? currentHistoryItem.journey : selectedJourney.title}
+                    Jornada: {currentHistoryItem ? currentHistoryItem.journey.title : selectedJourney.title}
                   </p>
                   <p className="text-xs opacity-75">
-                    Jornada: {currentHistoryItem ? currentHistoryItem.map : selectedMap.title}
+                    Jornada: {currentHistoryItem ? currentHistoryItem.map.title : selectedMap.title}
                   </p>
                 </div>
 
@@ -742,8 +809,8 @@ export default function MetricsDashboard() {
 
                                   {/* Student lines */}
                                   {selectedStudents.map((student, index) => {
-                                    const color = student.average > turmaAverage ? "#10b981" : "#ef4444"
-                                    const yPos = 160 - student.average * 1.6
+                                    const color = student.averageICP > turmaAverage! ? "#10b981" : "#ef4444"
+                                    const yPos = 160 - student.averageICP * 1.6
                                     return (
                                       <polyline
                                         key={student.id}
@@ -762,8 +829,8 @@ export default function MetricsDashboard() {
                                   <circle cx="350" cy="70" r="3" fill="#6b7280" />
 
                                   {selectedStudents.map((student, index) => {
-                                    const color = student.average > turmaAverage ? "#10b981" : "#ef4444"
-                                    const yPos = 160 - student.average * 1.6
+                                    const color = student.averageICP > turmaAverage! ? "#10b981" : "#ef4444"
+                                    const yPos = 160 - student.averageICP * 1.6
                                     return (
                                       <g key={student.id}>
                                         <circle cx="50" cy={yPos + 10} r="3" fill={color} />
@@ -796,12 +863,12 @@ export default function MetricsDashboard() {
                                 {selectedStudents.map((student) => (
                                   <div key={student.id} className="flex items-center gap-2">
                                     <div
-                                      className={`w-4 h-0.5 ${student.average > turmaAverage ? "bg-green-500" : "bg-red-500"}`}
+                                      className={`w-4 h-0.5 ${student.averageICP > turmaAverage! ? "bg-green-500" : "bg-red-500"}`}
                                     ></div>
                                     <span
-                                      className={student.average > turmaAverage ? "text-green-600" : "text-red-600"}
+                                      className={student.averageICP > turmaAverage! ? "text-green-600" : "text-red-600"}
                                     >
-                                      {student.name} ({student.average}%)
+                                      {student.name} ({student.averageICP}%)
                                     </span>
                                   </div>
                                 ))}
@@ -827,10 +894,10 @@ export default function MetricsDashboard() {
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-medium">Turma</span>
-                          <span className="text-sm font-bold">{turmaAverage}%</span>
+                          <span className="text-sm font-bold">{currentHistoryItem?.result}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div className="h-3 rounded-full bg-purple-500" style={{ width: `${turmaAverage}%` }} />
+                          <div className="h-3 rounded-full bg-purple-500" style={{ width: `${currentHistoryItem?.result}%` }} />
                         </div>
                       </div>
 
@@ -839,29 +906,25 @@ export default function MetricsDashboard() {
                           <div className="flex justify-between items-center">
                             <span className="text-sm font-medium">{student.name}</span>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold">{student.average}%</span>
+                              <span className="text-sm font-bold">{student.averageICP}%</span>
                               <span
-                                className={`text-xs ${student.average > turmaAverage ? "text-green-600" : "text-red-600"}`}
+                                className={`text-xs ${student.averageICP > currentHistoryItem?.result! ? "text-green-600" : "text-red-600"}`}
                               >
-                                ({student.average > turmaAverage ? "+" : ""}
-                                {student.average - turmaAverage}%)
+                                ({student.averageICP > currentHistoryItem?.result! ? "+" : ""}
+                                {student.averageICP - currentHistoryItem?.result!}%)
                               </span>
                             </div>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-3">
                             <div
-                              className={`h-3 rounded-full ${student.average > turmaAverage ? "bg-green-500" : "bg-red-500"}`}
-                              style={{ width: `${student.average}%` }}
+                              className={`h-3 rounded-full ${student.averageICP > currentHistoryItem?.result! ? "bg-green-500" : "bg-red-500"}`}
+                              style={{ width: `${student.averageICP}%` }}
                             />
                           </div>
                         </div>
                       ))}
 
-                      <div className="pt-4">
-                        <Button variant="outline" size="sm">
-                          Nova Consulta
-                        </Button>
-                      </div>
+              
                     </CardContent>
                   </Card>
                 )}
@@ -1097,7 +1160,7 @@ export default function MetricsDashboard() {
                         <TrendingUp className="w-5 h-5 text-red-600" />
                         <span className="text-sm font-medium text-red-800">ICP Médio da Turma</span>
                       </div>
-                      <div className="text-4xl font-bold text-red-600">{turmaAverage}%</div>
+                      <div className="text-4xl font-bold text-red-600">{currentHistoryItem?.result}%</div>
                     </CardContent>
                   </Card>
                 )}
@@ -1141,10 +1204,12 @@ export default function MetricsDashboard() {
                           >
                             <div className="flex justify-between items-start">
                               <div>
-                                <div className="font-medium text-sm">{analysis.journey}</div>
-                                <div className="text-xs text-gray-600">Análise: {analysis.date}</div>
+                                <div className="font-medium text-sm">{analysis.journey.title}</div>
+                                <div className="text-xs text-gray-600">Período de Análise: {analysis.date}</div>
                                 <div className="text-xs text-gray-600">Período: {analysis.period}</div>
-                                <div className="text-xs text-gray-600">Mapa: {analysis.map}</div>
+                                <div className="text-xs text-gray-600">Jornada: {analysis.journey.title}</div>
+                                <div className="text-xs text-gray-600">Mapa: {analysis.map.title}</div>
+
                               </div>
                               <div className="text-right">
                                 <div className="text-sm font-bold text-purple-600">{analysis.type}</div>
