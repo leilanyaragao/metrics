@@ -14,8 +14,14 @@ import { Calculator, History, TrendingUp, Info, Users, X } from "lucide-react"
 import axios from "axios"
 import { Value } from "@radix-ui/react-select"
 import { List } from "postcss/lib/list"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { CalendarIcon, InfoIcon, ClockIcon } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NDkwOTQ4MjQsImlhdCI6MTc0OTA4MDQyNH0.6EHcMri6oe2FzDEg-He3juScpKByzhbL77LqAuSfe68AgCMOFQOKYav1IU5yleme607Cvzr4An25G0JEqjMLYQ"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NDkyNzQyMTcsImlhdCI6MTc0OTI1OTgxN30.JAniNA3hcZe2SIS8FfbWPC12evIsXjAzHR4G1FeAzGx0wxv0kbZJT7VlTWAc-72LCWnzq4-dFUEWzKVE8i1kPQ"
 
 interface AnalysisHistory {
   id: string
@@ -32,7 +38,7 @@ interface AnalysisHistory {
 
 interface RangeDatesICP {
   map_id: string
-  convergence_point: boolean 
+  convergence_point: boolean
   divergence_point: boolean
   essay_point: boolean
   dynamic_weights: boolean
@@ -44,7 +50,7 @@ interface RangeDatesICP {
 
 interface RangeDatesIAE {
   map_id: string
-  convergence_point: boolean 
+  convergence_point: boolean
   divergence_point: boolean
   essay_point: boolean
   dynamic_weights: boolean
@@ -76,7 +82,6 @@ export default function MetricsDashboard() {
   })
 
 
-
   // ICP weights (GAP and RPP) - linked sliders
   const [icpWeights, setIcpWeights] = useState({
     pesoGAP: [50],
@@ -99,22 +104,22 @@ export default function MetricsDashboard() {
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistory[]>([])
   const [currentHistoryItem, setCurrentHistoryItem] = useState<AnalysisHistory | null>(null)
 
-  const [journeys, setJourneys] = useState<any[]> (
+  const [journeys, setJourneys] = useState<any[]>(
     []
   )
-  useEffect(()=> {
-    axios.get("http://localhost:8095/v1/map/metrics/journeys", {headers:{Authorization:`Bearer ${acessToken}`}}).then(
+  useEffect(() => {
+    axios.get("http://localhost:8095/v1/map/metrics/journeys", { headers: { Authorization: `Bearer ${acessToken}` } }).then(
       value => setJourneys(value.data))
   },
-  [])
+    [])
 
-  const [maps, setMaps] = useState<any[]> ([])
-  
-  useEffect(()=> {
-   setMaps(journeys.find(item=>item.id === selectedJourney?.id)?.maps??[])
+  const [maps, setMaps] = useState<any[]>([])
+
+  useEffect(() => {
+    setMaps(journeys.find(item => item.id === selectedJourney?.id)?.maps ?? [])
   },
-  [selectedJourney])
-  
+    [selectedJourney])
+
   // Handle ICP weight changes to maintain 100% total
   const handleICPWeightChange = (type: "GAP" | "RPP", value: number[]) => {
     const newValue = value[0]
@@ -174,6 +179,33 @@ export default function MetricsDashboard() {
     setCurrentHistoryItem(null)
   }
 
+  //Formatação
+
+  const formatarDataHora = (dataTexto: string): string => {
+    const data = new Date(dataTexto);
+    return data.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatarPeriodoBr = (periodoTexto: string): string => {
+    const [inicioStr, fimStr] = periodoTexto.split(' - ');
+    const inicio = new Date(inicioStr);
+    const fim = new Date(fimStr);
+
+    const formatador = new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+
+    return `${formatador.format(inicio)} a ${formatador.format(fim)}`;
+  };
+
   const handleCalculate = () => {
     if (selectedJourney && selectedMap && startDate && (collectionType === "range" ? endDate : startTime)) {
       // Only add to history if it's range de datas
@@ -190,19 +222,19 @@ export default function MetricsDashboard() {
           end_date: new Date(endDate),
         }
 
-        axios.post("http://localhost:8095/v1/map/metrics/participation-consistency-index", 
-          newRangeDatesICP, 
-          {headers:{Authorization:`Bearer ${acessToken}`}}).
-          then(response=>{
-            const students = response.data.participation_consistency_per_users.map((value:any)=>({
+        axios.post("http://localhost:8095/v1/map/metrics/participation-consistency-index",
+          newRangeDatesICP,
+          { headers: { Authorization: `Bearer ${acessToken}` } }).
+          then(response => {
+            const students = response.data.participation_consistency_per_users.map((value: any) => ({
               id: value.user_id,
               name: value.user_name,
-              averageRPP: value.user_average_rpp,
-              averageGAP: value.user_average_gap,
-              averageICP: value.user_average_icp
+              averageRPP: value.user_average_rpp.toFixed(2),
+              averageGAP: value.user_average_gap.toFixed(2),
+              averageICP: value.user_average_icp.toFixed(2)
             }))
             setAvailableStudents(students)
-            setTurmaAvarage(response.data.class_average_icp)
+            setTurmaAvarage(response.data.class_average_icp.toFixed(2))
 
             const newAnalysis: AnalysisHistory = {
               id: Date.now().toString(),
@@ -210,12 +242,12 @@ export default function MetricsDashboard() {
               map: selectedMap,
               date: response.data.created_at,
               period: `${startDate} - ${endDate}`,
-              result: response.data.class_average_icp,
+              result: response.data.class_average_icp.toFixed(2),
               type: activeMetric,
               collectionType,
               students
             }
-            
+
             setAnalysisHistory([newAnalysis, ...analysisHistory])
             setCurrentHistoryItem(newAnalysis)
             setSelectedStudents([])
@@ -236,9 +268,9 @@ export default function MetricsDashboard() {
           end_date: new Date(endDate),
         }
 
-        axios.post("http://localhost:8095/v1/map/metrics/structured-dropout-index", 
-          newRangeDatesIAE, 
-          {headers:{Authorization:`Bearer ${acessToken}`}})
+        axios.post("http://localhost:8095/v1/map/metrics/structured-dropout-index",
+          newRangeDatesIAE,
+          { headers: { Authorization: `Bearer ${acessToken}` } })
 
         const newAnalysis: AnalysisHistory = {
           id: Date.now().toString(),
@@ -335,11 +367,10 @@ export default function MetricsDashboard() {
                         setSelectedStudents([])
                         setCurrentHistoryItem(null)
                       }}
-                      className={`w-full font-medium pb-1 ${
-                        activeMetric === "ICP"
-                          ? "text-purple-600 border-b-2 border-purple-600"
-                          : "text-gray-500 hover:text-gray-700"
-                      }`}
+                      className={`w-full font-medium pb-1 ${activeMetric === "ICP"
+                        ? "text-purple-600 border-b-2 border-purple-600"
+                        : "text-gray-500 hover:text-gray-700"
+                        }`}
                     >
                       ICP
                     </button>
@@ -352,11 +383,10 @@ export default function MetricsDashboard() {
                         setSelectedStudents([])
                         setCurrentHistoryItem(null)
                       }}
-                      className={`w-full font-medium pb-1 ${
-                        activeMetric === "IAE"
-                          ? "text-purple-600 border-b-2 border-purple-600"
-                          : "text-gray-500 hover:text-gray-700"
-                      }`}
+                      className={`w-full font-medium pb-1 ${activeMetric === "IAE"
+                        ? "text-purple-600 border-b-2 border-purple-600"
+                        : "text-gray-500 hover:text-gray-700"
+                        }`}
                     >
                       IAE
                     </button>
@@ -437,51 +467,71 @@ export default function MetricsDashboard() {
                   <Label className="text-sm font-medium">
                     {collectionType === "range" ? "Período" : "Data e Hora de Início"}
                   </Label>
+
                   {collectionType === "range" ? (
                     <div className="grid grid-cols-2 gap-3 mt-2">
+                      {/* Data Inicial */}
                       <div>
-                        <Label htmlFor="start-date" className="text-xs text-gray-500">
-                          Data Início
-                        </Label>
-                        <Input
-                          id="start-date"
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                          className="mt-1"
-                        />
+                        <Label className="text-xs text-gray-500">Data Inicial</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn("w-full mt-1 pl-3 text-left font-normal", !startDate && "text-muted-foreground")}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {startDate ? format(startDate, "dd/MM/yyyy") : <span>Selecione</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                          </PopoverContent>
+                        </Popover>
                       </div>
+
+                      {/* Data Final */}
                       <div>
-                        <Label htmlFor="end-date" className="text-xs text-gray-500">
-                          Data Final
-                        </Label>
-                        <Input
-                          id="end-date"
-                          type="date"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                          className="mt-1"
-                        />
+                        <Label className="text-xs text-gray-500">Data Final</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn("w-full mt-1 pl-3 text-left font-normal", !endDate && "text-muted-foreground")}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {endDate ? format(endDate, "dd/MM/yyyy") : <span>Selecione</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3 mt-2">
+                      {/* Data Inicial */}
                       <div>
-                        <Label htmlFor="start-date-periodic" className="text-xs text-gray-500">
-                          Data Início
-                        </Label>
-                        <Input
-                          id="start-date-periodic"
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                          className="mt-1"
-                        />
+                        <Label className="text-xs text-gray-500">Data Inicial</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn("w-full mt-1 pl-3 text-left font-normal", !startDate && "text-muted-foreground")}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {startDate ? format(startDate, "dd/MM/yyyy") : <span>Selecione</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                          </PopoverContent>
+                        </Popover>
                       </div>
+
+                      {/* Hora Inicial */}
                       <div>
-                        <Label htmlFor="start-time" className="text-xs text-gray-500">
-                          Hora Início
-                        </Label>
+                        <Label htmlFor="start-time" className="text-xs text-gray-500">Hora Início</Label>
                         <Input
                           id="start-time"
                           type="time"
@@ -490,27 +540,34 @@ export default function MetricsDashboard() {
                           className="mt-1"
                         />
                       </div>
+
+                      {/* Data Final */}
                       <div>
-                        <Label htmlFor="end-date-periodic" className="text-xs text-gray-500">
-                          Data Término
-                        </Label>
-                        <Input
-                          id="end-date-periodic"
-                          type="date"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                          className="mt-1"
-                        />
+                        <Label className="text-xs text-gray-500">Data Término</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn("w-full mt-1 pl-3 text-left font-normal", !endDate && "text-muted-foreground")}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {endDate ? format(endDate, "dd/MM/yyyy") : <span>Selecione</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                          </PopoverContent>
+                        </Popover>
                       </div>
+
+                      {/* Hora Final */}
                       <div>
-                        <Label htmlFor="end-time" className="text-xs text-gray-500">
-                          Hora de Término
-                        </Label>
+                        <Label htmlFor="end-time" className="text-xs text-gray-500">Hora de Término</Label>
                         <Input
                           id="end-time"
                           type="time"
                           value={endTime}
-                          onChange={(e) => endTime(e.target.value)}
+                          onChange={(e) => setEndTime(e.target.value)}
                           className="mt-1"
                         />
                       </div>
@@ -518,10 +575,11 @@ export default function MetricsDashboard() {
                   )}
                 </div>
 
+
                 {/* Journey Selection */}
                 <div>
                   <Label className="text-sm font-medium">Jornada</Label>
-                  <Select value={selectedJourney?.id} onValueChange={(value)=>setSelectedJourney(journeys.find(item=>item.id===value))}>
+                  <Select value={selectedJourney?.id} onValueChange={(value) => setSelectedJourney(journeys.find(item => item.id === value))}>
                     <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Selecione a jornada" />
                     </SelectTrigger>
@@ -539,7 +597,7 @@ export default function MetricsDashboard() {
                 {selectedJourney && (
                   <div>
                     <Label className="text-sm font-medium">Mapa</Label>
-                    <Select value={selectedMap?.id} onValueChange={(value)=>setSelectedMap(maps.find(item=>item.id===value))}>
+                    <Select value={selectedMap?.id} onValueChange={(value) => setSelectedMap(maps.find(item => item.id === value))}>
                       <SelectTrigger className="mt-2">
                         <SelectValue placeholder="Selecione o mapa" />
                       </SelectTrigger>
@@ -609,7 +667,19 @@ export default function MetricsDashboard() {
                           <Label htmlFor="dynamic-weights" className="text-sm font-medium">
                             Peso Dinâmico
                           </Label>
-                          <Info className="w-4 h-4 text-gray-400" />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent side="right" align="start" className="max-w-[260px]">
+                                <p className="text-sm">
+                                  O sistema analisa o padrão de engajamento da turma e ajusta os pesos entre TAP e TAprog
+                                  dinamicamente. O indicador mais representativo recebe maior peso (60%).
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                         <Switch id="dynamic-weights" checked={dynamicWeights} onCheckedChange={setDynamicWeights} />
                       </div>
@@ -622,9 +692,22 @@ export default function MetricsDashboard() {
                       <>
                         <div>
                           <div className="flex justify-between items-center mb-2">
-                            <Label className="text-xs">Peso GAP</Label>
+                            <Label className="text-xs">Índice de Gaps na Participação (GAP) </Label>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right" align="start" className="max-w-[260px]">
+                                  <p className="text-sm">
+                                    Mede a regularidade das participações, penalizando alunos que interagem de forma intercalada
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             <span className="text-xs font-medium">{icpWeights.pesoGAP[0]}%</span>
                           </div>
+
                           <Slider
                             value={icpWeights.pesoGAP}
                             onValueChange={(value) => handleICPWeightChange("GAP", value)}
@@ -635,7 +718,18 @@ export default function MetricsDashboard() {
                         </div>
                         <div>
                           <div className="flex justify-between items-center mb-2">
-                            <Label className="text-xs">Peso RPP</Label>
+                            <Label className="text-xs">Regularidade da Participação (RPP)</Label>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right" align="start" className="max-w-[260px]">
+                                  <p className="text-sm">
+                                    Mede a continuidade das participações, penalizando ausências prolongadas ao longo do tempo                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             <span className="text-xs font-medium">{icpWeights.pesoRPP[0]}%</span>
                           </div>
                           <Slider
@@ -656,8 +750,21 @@ export default function MetricsDashboard() {
                         <>
                           <div>
                             <div className="flex justify-between items-center mb-2">
-                              <Label className="text-xs">Peso TAP</Label>
-                              <span className="text-xs font-medium text-red-600">{iaeWeights.pesoTAP[0]}%</span>
+                              <Label className="text-xs">Taxa de Abandono Relativa ao Ponto - TAp</Label>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" align="start" className="max-w-[260px]">
+                                    <p className="text-sm">
+                                      Avalia o abandono entre dois pontos consecutivos da jornada, com base nos alunos que
+                                      participaram anteriormente.
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <span className="text-xs font-medium text-gray-600">{iaeWeights.pesoTAP[0]}%</span>
                             </div>
                             <Slider
                               value={iaeWeights.pesoTAP}
@@ -669,8 +776,21 @@ export default function MetricsDashboard() {
                           </div>
                           <div>
                             <div className="flex justify-between items-center mb-2">
-                              <Label className="text-xs">Peso TAProg</Label>
-                              <span className="text-xs font-medium text-red-600">{iaeWeights.pesoTAProg[0]}%</span>
+                              <Label className="text-xs"> Taxa de Abandono Progressivo - TAprog</Label>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" align="start" className="max-w-[260px]">
+                                    <p className="text-sm">
+                                      Indica o percentual de alunos que deixaram de participar em cada ponto, com base no total de
+                                      participantes ao longo da jornada.
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <span className="text-xs font-medium text-gray-600">{iaeWeights.pesoTAProg[0]}%</span>
                             </div>
                             <Slider
                               value={iaeWeights.pesoTAProg}
@@ -911,7 +1031,7 @@ export default function MetricsDashboard() {
                                 className={`text-xs ${student.averageICP > currentHistoryItem?.result! ? "text-green-600" : "text-red-600"}`}
                               >
                                 ({student.averageICP > currentHistoryItem?.result! ? "+" : ""}
-                                {student.averageICP - currentHistoryItem?.result!}%)
+                                {(student.averageICP - currentHistoryItem?.result!).toFixed(2)}%)
                               </span>
                             </div>
                           </div>
@@ -924,7 +1044,7 @@ export default function MetricsDashboard() {
                         </div>
                       ))}
 
-              
+
                     </CardContent>
                   </Card>
                 )}
@@ -1160,7 +1280,7 @@ export default function MetricsDashboard() {
                         <TrendingUp className="w-5 h-5 text-red-600" />
                         <span className="text-sm font-medium text-red-800">ICP Médio da Turma</span>
                       </div>
-                      <div className="text-4xl font-bold text-red-600">{currentHistoryItem?.result}%</div>
+                      <div className="text-4xl font-bold text-red-600">{(currentHistoryItem?.result)}%</div>
                     </CardContent>
                   </Card>
                 )}
@@ -1204,12 +1324,10 @@ export default function MetricsDashboard() {
                           >
                             <div className="flex justify-between items-start">
                               <div>
-                                <div className="font-medium text-sm">{analysis.journey.title}</div>
-                                <div className="text-xs text-gray-600">Período de Análise: {analysis.date}</div>
-                                <div className="text-xs text-gray-600">Período: {analysis.period}</div>
-                                <div className="text-xs text-gray-600">Jornada: {analysis.journey.title}</div>
+                                <div className="font-medium text-sm">Jornada: {analysis.journey.title}</div>
                                 <div className="text-xs text-gray-600">Mapa: {analysis.map.title}</div>
-
+                                <div className="text-xs text-gray-600">Data da criação: {formatarDataHora(analysis.date)}</div>
+                                <div className="text-xs text-gray-600">Período de análise: {formatarPeriodoBr(analysis.period)}</div>
                               </div>
                               <div className="text-right">
                                 <div className="text-sm font-bold text-purple-600">{analysis.type}</div>
