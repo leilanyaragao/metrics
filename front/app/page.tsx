@@ -23,6 +23,52 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NDkyNzQyMTcsImlhdCI6MTc0OTI1OTgxN30.JAniNA3hcZe2SIS8FfbWPC12evIsXjAzHR4G1FeAzGx0wxv0kbZJT7VlTWAc-72LCWnzq4-dFUEWzKVE8i1kPQ"
 
+
+
+type DropoutDataPoint = {
+  label: string
+  structured_dropout_index: number // IAE
+  relative_dropout_index: number   // TAP
+  progressive_dropout_rate: number // TAProg
+}
+
+const chartData: DropoutDataPoint[] = [
+  { label: "Janeiro", structured_dropout_index: 68, relative_dropout_index: 55, progressive_dropout_rate: 60 },
+  { label: "Fevereiro", structured_dropout_index: 72, relative_dropout_index: 60, progressive_dropout_rate: 63 },
+  { label: "Março", structured_dropout_index: 70, relative_dropout_index: 58, progressive_dropout_rate: 66 },
+  { label: "Abril", structured_dropout_index: 67, relative_dropout_index: 54, progressive_dropout_rate: 61 },
+  { label: "Maio", structured_dropout_index: 74, relative_dropout_index: 62, progressive_dropout_rate: 65 },
+  { label: "Junho", structured_dropout_index: 74, relative_dropout_index: 62, progressive_dropout_rate: 65 },
+
+
+]
+const pointCount = chartData.length
+const totalWidth = 400
+const paddingLeft = 0
+const paddingRight = 0
+const chartWidth = totalWidth - paddingLeft - paddingRight
+const gap = chartWidth / (pointCount - 1)
+//teste
+const getYPos = (value: number) => {
+  const min = 0
+  const max = 100
+  const chartHeight = 200
+  const padding = 10 // margem para os pontos não fugirem
+  const range = max - min
+
+  return padding + (chartHeight - 2 * padding) * (1 - (value - min) / range)
+}
+const xPositions = Array.from({ length: pointCount }, (_, i) => paddingLeft + i * gap)
+
+
+// Mapas dos dados
+const iaeData = chartData.map((d) => d.structured_dropout_index)
+const tapData = chartData.map((d) => d.relative_dropout_index)
+const taprogData = chartData.map((d) => d.progressive_dropout_rate)
+const xLabels = chartData.map((d) => d.label)
+
+
+
 interface AnalysisHistory {
   id: string
   journey: any
@@ -1061,175 +1107,170 @@ export default function MetricsDashboard() {
                     <CardContent>
                       <div className="relative h-80 bg-gray-50 rounded-lg p-6">
                         <div className="h-64 relative">
-                          {/* Y-axis labels (0-100) */}
-                          <div className="absolute left-0 top-0 text-xs text-gray-500">100</div>
-                          <div className="absolute left-0 top-12 text-xs text-gray-500">75</div>
-                          <div className="absolute left-0 top-24 text-xs text-gray-500">50</div>
-                          <div className="absolute left-0 top-36 text-xs text-gray-500">25</div>
-                          <div className="absolute left-0 bottom-12 text-xs text-gray-500">0</div>
+                          {/* Y-axis labels */}
+                          {[100, 75, 50, 25, 0].map((val, idx) => (
+                            <div key={idx} className="absolute left-0 text-xs text-gray-500" style={{ top: `${(100 - val) * 2}px` }}>
+                              {val}
+                            </div>
+                          ))}
+
 
                           {/* Chart area */}
-                          <div className="absolute left-8 top-0 right-4 bottom-8">
-                            <svg className="w-full h-full" viewBox="0 0 400 200">
+                          <div className="absolute left-12 top-0 right-4 bottom-8">
+                            <svg className="w-full h-full" viewBox="0 0 400 200" preserveAspectRatio="none">
                               {/* Horizontal grid lines */}
-                              <line x1="0" y1="0" x2="400" y2="0" stroke="#e5e7eb" strokeWidth="1" />
-                              <line x1="0" y1="50" x2="400" y2="50" stroke="#e5e7eb" strokeWidth="1" />
-                              <line x1="0" y1="100" x2="400" y2="100" stroke="#e5e7eb" strokeWidth="1" />
-                              <line x1="0" y1="150" x2="400" y2="150" stroke="#e5e7eb" strokeWidth="1" />
-                              <line x1="0" y1="200" x2="400" y2="200" stroke="#e5e7eb" strokeWidth="1" />
+                              {[0, 50, 100, 150, 200].map((y) => (
+                                <line
+                                  key={`h-${y}`}
+                                  x1={0}
+                                  y1={y}
+                                  x2={400}
+                                  y2={y}
+                                  stroke={y === 0 ? "#374151" : "#d1d5db"} // #374151 = gray-700, #d1d5db = gray-300
+                                  strokeWidth="1"
+                                  strokeDasharray={y === 0 ? "0" : "4 2"}
+                                />
+                              ))}
 
-                              {/* Vertical grid lines aligned with data points */}
-                              <line x1="50" y1="0" x2="50" y2="200" stroke="#f3f4f6" strokeWidth="1" />
-                              <line x1="150" y1="0" x2="150" y2="200" stroke="#f3f4f6" strokeWidth="1" />
-                              <line x1="250" y1="0" x2="250" y2="200" stroke="#f3f4f6" strokeWidth="1" />
-                              <line x1="350" y1="0" x2="350" y2="200" stroke="#f3f4f6" strokeWidth="1" />
+                              {/* Vertical grid lines */}
+                              {xPositions.map((x, i) => (
+                                <g key={`v-${i}`}>
+                                  <line
+                                    x1={x}
+                                    y1={0}
+                                    x2={x}
+                                    y2={200}
+                                    stroke={x === 0 ? "#374151" : "#d1d5db"}
+                                    strokeWidth="1"
+                                    strokeDasharray={x === 0 ? "0" : "4 2"}
+                                  />
+                                  {/* Label */}
+                                  <text
+                                    x={x}
+                                    y="215"
+                                    fontSize="10"
+                                    fill="#6b7280"
+                                    textAnchor="middle"
+                                  >
+                                    {chartData[i].label}
+                                  </text>
+                                </g>
+                              ))}
 
-                              {(() => {
-                                // Sample data for demonstration
-                                const iaeData = [65, 72, 68, 75] // IAE values for 4 points/periods
-                                const tapData = [58, 69, 74, 71] // TAP values
-                                const taprogData = [62, 66, 70, 78] // TAProg values
+                              {/* IAE polyline */}
+                              <polyline
+                                points={xPositions.map((x, i) => `${x},${getYPos(iaeData[i])}`).join(" ")}
+                                fill="none"
+                                stroke="#3b82f6"
+                                strokeWidth="1"
+                              />
 
-                                // X positions aligned with grid lines and labels
-                                const xPositions = [50, 150, 250, 350]
+                              {/* TAP polyline */}
+                              <polyline
+                                points={xPositions.map((x, i) => `${x},${getYPos(tapData[i])}`).join(" ")}
+                                fill="none"
+                                stroke="#10b981"
+                                strokeWidth="1"
+                              />
 
-                                // Convert percentage to Y position (invert because SVG Y increases downward)
-                                const getYPos = (percentage) => 200 - percentage * 2
+                              {/* TAProg polyline */}
+                              <polyline
+                                points={xPositions.map((x, i) => `${x},${getYPos(taprogData[i])}`).join(" ")}
+                                fill="none"
+                                stroke="#f59e0b"
+                                strokeWidth="1"
+                              />
 
-                                return (
-                                  <g>
-                                    {/* IAE line */}
-                                    <polyline
-                                      points={xPositions.map((x, i) => `${x},${getYPos(iaeData[i])}`).join(" ")}
-                                      fill="none"
-                                      stroke="#3b82f6"
-                                      strokeWidth="3"
-                                    />
+                              {/* Data points and hover areas */}
+                              {xPositions.map((x, i) => (
+                                <g key={i}>
+                                  <circle
+                                    cx={x}
+                                    cy={getYPos(iaeData[i])}
+                                    r="4"
+                                    fill="#3b82f6"
+                                    className="hover:r-6 cursor-pointer transition-all"
+                                  />
+                                  {/* Retângulo para TAP */}
+                                  <rect
+                                    x={x - 4}
+                                    y={getYPos(tapData[i]) - 4}
+                                    width="8"
+                                    height="8"
+                                    fill="#10b981"
+                                    className="cursor-pointer hover:scale-110 transition-transform"
+                                  />
+                                  <polygon
+                                    points={`
+                                      ${x},${getYPos(taprogData[i]) - 5} 
+                                      ${x - 5},${getYPos(taprogData[i]) + 5} 
+                                      ${x + 5},${getYPos(taprogData[i]) + 5}
+                                    `}
+                                    fill="#f59e0b"
+                                    className="cursor-pointer hover:scale-110 transition-transform"
+                                  />
 
-                                    {/* TAP line */}
-                                    <polyline
-                                      points={xPositions.map((x, i) => `${x},${getYPos(tapData[i])}`).join(" ")}
-                                      fill="none"
-                                      stroke="#10b981"
-                                      strokeWidth="3"
-                                    />
+                                  {/* Hover rect */}
+                                  <rect
+                                    x={x - 20}
+                                    y={0}
+                                    width={40}
+                                    height={200}
+                                    fill="transparent"
+                                    className="cursor-pointer"
+                                    onMouseEnter={() => {
+                                      const tooltip = document.getElementById(`tooltip-${i}`)
+                                      if (tooltip) tooltip.style.display = "block"
+                                    }}
+                                    onMouseLeave={() => {
+                                      const tooltip = document.getElementById(`tooltip-${i}`)
+                                      if (tooltip) tooltip.style.display = "none"
+                                    }}
+                                  />
+                                </g>
+                              ))}
 
-                                    {/* TAProg line */}
-                                    <polyline
-                                      points={xPositions.map((x, i) => `${x},${getYPos(taprogData[i])}`).join(" ")}
-                                      fill="none"
-                                      stroke="#f59e0b"
-                                      strokeWidth="3"
-                                    />
-
-                                    {/* Data points with hover areas */}
-                                    {xPositions.map((x, i) => (
-                                      <g key={i}>
-                                        {/* IAE point */}
-                                        <circle
-                                          cx={x}
-                                          cy={getYPos(iaeData[i])}
-                                          r="4"
-                                          fill="#3b82f6"
-                                          className="hover:r-6 cursor-pointer transition-all"
-                                        />
-
-                                        {/* TAP point */}
-                                        <circle
-                                          cx={x}
-                                          cy={getYPos(tapData[i])}
-                                          r="4"
-                                          fill="#10b981"
-                                          className="hover:r-6 cursor-pointer transition-all"
-                                        />
-
-                                        {/* TAProg point */}
-                                        <circle
-                                          cx={x}
-                                          cy={getYPos(taprogData[i])}
-                                          r="4"
-                                          fill="#f59e0b"
-                                          className="hover:r-6 cursor-pointer transition-all"
-                                        />
-
-                                        {/* Invisible hover area for tooltip */}
-                                        <rect
-                                          x={x - 20}
-                                          y="0"
-                                          width="40"
-                                          height="200"
-                                          fill="transparent"
-                                          className="cursor-pointer"
-                                          onMouseEnter={(e) => {
-                                            const tooltip = document.getElementById(`tooltip-${i}`)
-                                            if (tooltip) {
-                                              tooltip.style.display = "block"
-                                            }
-                                          }}
-                                          onMouseLeave={(e) => {
-                                            const tooltip = document.getElementById(`tooltip-${i}`)
-                                            if (tooltip) {
-                                              tooltip.style.display = "none"
-                                            }
-                                          }}
-                                        />
-                                      </g>
-                                    ))}
-
-                                    {/* Tooltips positioned relative to chart */}
-                                    {xPositions.map((x, i) => (
-                                      <foreignObject key={`tooltip-${i}`} x={x - 60} y="10" width="120" height="80">
-                                        <div
-                                          id={`tooltip-${i}`}
-                                          className="bg-white border border-gray-300 rounded-lg p-2 shadow-lg text-xs"
-                                          style={{ display: "none" }}
-                                        >
-                                          <div className="font-medium mb-1 text-center">
-                                            {collectionType === "range"
-                                              ? `Ponto ${String.fromCharCode(65 + i)}`
-                                              : getTimeLabels()[i]}
-                                          </div>
-                                          <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                              <span>IAE: {iaeData[i]}%</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                              <span>TAP: {tapData[i]}%</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                              <span>TAProg: {taprogData[i]}%</span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </foreignObject>
-                                    ))}
-                                  </g>
-                                )
-                              })()}
+                              {/* Tooltips */}
+                              {xPositions.map((x, i) => (
+                                <foreignObject key={i} id={`tooltip-${i}`} x={x - 60} y={10} width={120} height={80} style={{ display: "none" }}>
+                                  <div className="bg-white border border-gray-300 rounded-lg p-2 shadow-lg text-xs">
+                                    <div className="font-medium mb-1 text-center">
+                                      {collectionType === "range" ? xLabels[i] : getTimeLabels()[i]}
+                                    </div>
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        <span>IAE: {iaeData[i]}%</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <span>TAP: {tapData[i]}%</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                        <span>TAProg: {taprogData[i]}%</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </foreignObject>
+                              ))}
                             </svg>
+                            
                           </div>
 
-                          {/* X-axis labels aligned with data points */}
-                          <div className="absolute left-8 right-4 bottom-0 flex justify-between text-xs text-gray-500">
-                            {collectionType === "range" ? (
-                              // Map Points for range de datas
-                              <>
-                                <div className="text-center">Ponto A</div>
-                                <div className="text-center">Ponto B</div>
-                                <div className="text-center">Ponto C</div>
-                                <div className="text-center">Ponto D</div>
-                              </>
-                            ) : (
-                              // Time labels for periodic collection
-                              getTimeLabels().map((label, index) => (
-                                <div key={index} className="text-center">
+                          {/* X-axis labels */}
+                          <div className="absolute left-12 right-4 bottom-0 flex justify-between text-xs text-gray-500">
+                            {collectionType === "range"
+                              ? xLabels.map((label, i) => (
+                                <div key={i} className="text-center">
                                   {label}
                                 </div>
                               ))
-                            )}
+                              : getTimeLabels().map((label, i) => (
+                                <div key={i} className="text-center">
+                                  {label}
+                                </div>
+                              ))}
                           </div>
                         </div>
 
@@ -1237,15 +1278,15 @@ export default function MetricsDashboard() {
                         <div className="mt-4 flex gap-6 text-xs">
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-0.5 bg-blue-500"></div>
-                            <span>IAE - Índice de Adequação Estrutural</span>
+                            <span>IAE - Índice de Abandono Estruturado</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-0.5 bg-green-500"></div>
-                            <span>TAP - Tempo de Adequação do Ponto</span>
+                            <span>TAP - Taxa de Abandono Relativa ao Ponto</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-0.5 bg-yellow-500"></div>
-                            <span>TAProg - Tempo de Adequação Progressiva</span>
+                            <span>TAProg - Taxa de Abandono Progressiva</span>
                           </div>
                         </div>
                       </div>
@@ -1254,17 +1295,23 @@ export default function MetricsDashboard() {
                       <div className="grid grid-cols-3 gap-4 mt-6">
                         <div className="p-4 border-l-4 border-blue-400 bg-blue-50 rounded-r-lg">
                           <div className="text-sm font-medium text-blue-800">IAE Médio</div>
-                          <div className="text-2xl font-bold text-blue-600">70%</div>
+                          <div className="text-2xl font-bold text-blue-600">
+                            {Math.round(iaeData.reduce((a, b) => a + b, 0) / iaeData.length)}%
+                          </div>
                           <div className="text-xs text-blue-600">Índice de Adequação Estrutural</div>
                         </div>
                         <div className="p-4 border-l-4 border-green-400 bg-green-50 rounded-r-lg">
                           <div className="text-sm font-medium text-green-800">TAP Médio</div>
-                          <div className="text-2xl font-bold text-green-600">68%</div>
+                          <div className="text-2xl font-bold text-green-600">
+                            {Math.round(tapData.reduce((a, b) => a + b, 0) / tapData.length)}%
+                          </div>
                           <div className="text-xs text-green-600">Tempo de Adequação do Ponto</div>
                         </div>
                         <div className="p-4 border-l-4 border-yellow-400 bg-yellow-50 rounded-r-lg">
                           <div className="text-sm font-medium text-yellow-800">TAProg Médio</div>
-                          <div className="text-2xl font-bold text-yellow-600">69%</div>
+                          <div className="text-2xl font-bold text-yellow-600">
+                            {Math.round(taprogData.reduce((a, b) => a + b, 0) / taprogData.length)}%
+                          </div>
                           <div className="text-xs text-yellow-600">Tempo de Adequação Progressiva</div>
                         </div>
                       </div>
