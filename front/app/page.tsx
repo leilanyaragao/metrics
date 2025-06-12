@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NDkyNzQyMTcsImlhdCI6MTc0OTI1OTgxN30.JAniNA3hcZe2SIS8FfbWPC12evIsXjAzHR4G1FeAzGx0wxv0kbZJT7VlTWAc-72LCWnzq4-dFUEWzKVE8i1kPQ"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NDk3MDMwOTUsImlhdCI6MTc0OTY4ODY5NX0.aTnEO92s4YVrecpH0GAnq3KHLNrRzZshl2rcLxquBIQBsb2XXpsKM8FYgEoDImgIzkUPLMgFCIvQ24XIKJJtqA"
 
 
 
@@ -119,7 +119,7 @@ export default function MetricsDashboard() {
   const [activeMetric, setActiveMetric] = useState<"ICP" | "IAE">("ICP")
   const [selectedJourney, setSelectedJourney] = useState<any>(null)
   const [selectedMap, setSelectedMap] = useState<any>(null)
-  const [startDate, setStartDate] = useState("")
+  const [startDate, setStartDate] = useState<any>(null)
   const [endDate, setEndDate] = useState("")
   const [pointTypes, setPointTypes] = useState({
     avaliacao: true,
@@ -1106,15 +1106,13 @@ export default function MetricsDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="relative h-80 bg-gray-50 rounded-lg p-6">
-                        <div className="h-64 relative">
+                        <div className="h-64 relative" id="aleatorio">
                           {/* Y-axis labels */}
                           {[100, 75, 50, 25, 0].map((val, idx) => (
                             <div key={idx} className="absolute left-0 text-xs text-gray-500" style={{ top: `${(100 - val) * 2}px` }}>
                               {val}
                             </div>
                           ))}
-
-
                           {/* Chart area */}
                           <div className="absolute left-12 top-0 right-4 bottom-8">
                             <svg className="w-full h-full" viewBox="0 0 400 200" preserveAspectRatio="none">
@@ -1218,44 +1216,48 @@ export default function MetricsDashboard() {
                                     height={200}
                                     fill="transparent"
                                     className="cursor-pointer"
-                                    onMouseEnter={() => {
-                                      const tooltip = document.getElementById(`tooltip-${i}`)
-                                      if (tooltip) tooltip.style.display = "block"
+                                    onMouseEnter={(e) => {
+                                      const tooltip = document.getElementById("tooltip")
+                                      if (tooltip) {
+                                        tooltip.style.display = "block"
+                                        tooltip.innerHTML = `
+                                          <div class="text-center font-semibold mb-1">${collectionType === "range" ? xLabels[i] : getTimeLabels()[i]}</div>
+                                          <div class="flex items-center gap-1">
+                                            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                            <span>IAE: ${iaeData[i]}%</span>
+                                          </div>
+                                          <div class="flex items-center gap-1">
+                                            <div class="w-2 h-2 bg-green-500"></div>
+                                            <span>TAP: ${tapData[i]}%</span>
+                                          </div>
+                                          <div class="flex items-center gap-1">
+                                            <div class="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-yellow-500"></div>
+                                            <span>TAProg: ${taprogData[i]}%</span>
+                                          </div>
+                                        `
+                                        const rect = (document.getElementById("aleatorio"))!.getBoundingClientRect()
+                                        tooltip.style.left = `${e.pageX - rect.left - 100}px`
+                                        tooltip.style.top = `${e.pageY - rect.top - 100}px`
+                                        console.log(e.pageX, rect.left, e.pageY, rect.top)
+
+                                      }
                                     }}
                                     onMouseLeave={() => {
-                                      const tooltip = document.getElementById(`tooltip-${i}`)
+                                      const tooltip = document.getElementById("tooltip")
                                       if (tooltip) tooltip.style.display = "none"
                                     }}
+
                                   />
                                 </g>
                               ))}
-
-                              {/* Tooltips */}
-                              {xPositions.map((x, i) => (
-                                <foreignObject key={i} id={`tooltip-${i}`} x={x - 60} y={10} width={120} height={80} style={{ display: "none" }}>
-                                  <div className="bg-white border border-gray-300 rounded-lg p-2 shadow-lg text-xs">
-                                    <div className="font-medium mb-1 text-center">
-                                      {collectionType === "range" ? xLabels[i] : getTimeLabels()[i]}
-                                    </div>
-                                    <div className="space-y-1">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                        <span>IAE: {iaeData[i]}%</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                        <span>TAP: {tapData[i]}%</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                        <span>TAProg: {taprogData[i]}%</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </foreignObject>
-                              ))}
                             </svg>
-                            
+
+                            <div
+                              id="tooltip"
+                              className="absolute z-10 bg-white border border-gray-300 rounded-md px-2 py-1 shadow text-[10px] text-gray-800 font-sans transition-opacity duration-200"
+                              style={{ display: "none", pointerEvents: "none", top: 0, left: 0 }}
+                            ></div>
+
                           </div>
 
                           {/* X-axis labels */}
