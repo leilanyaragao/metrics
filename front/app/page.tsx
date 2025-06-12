@@ -25,47 +25,6 @@ const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnV
 
 
 
-type DropoutDataPoint = {
-  label: string
-  structured_dropout_index: number // IAE
-  relative_dropout_index: number   // TAP
-  progressive_dropout_rate: number // TAProg
-}
-
-const chartData: DropoutDataPoint[] = [
-  { label: "Janeiro", structured_dropout_index: 68, relative_dropout_index: 55, progressive_dropout_rate: 60 },
-  { label: "Fevereiro", structured_dropout_index: 72, relative_dropout_index: 60, progressive_dropout_rate: 63 },
-  { label: "Março", structured_dropout_index: 70, relative_dropout_index: 58, progressive_dropout_rate: 66 },
-  { label: "Abril", structured_dropout_index: 67, relative_dropout_index: 54, progressive_dropout_rate: 61 },
-  { label: "Maio", structured_dropout_index: 74, relative_dropout_index: 62, progressive_dropout_rate: 65 },
-  { label: "Junho", structured_dropout_index: 74, relative_dropout_index: 62, progressive_dropout_rate: 65 },
-
-
-]
-const pointCount = chartData.length
-const totalWidth = 400
-const paddingLeft = 0
-const paddingRight = 0
-const chartWidth = totalWidth - paddingLeft - paddingRight
-const gap = chartWidth / (pointCount - 1)
-//teste
-const getYPos = (value: number) => {
-  const min = 0
-  const max = 100
-  const chartHeight = 200
-  const padding = 10 // margem para os pontos não fugirem
-  const range = max - min
-
-  return padding + (chartHeight - 2 * padding) * (1 - (value - min) / range)
-}
-const xPositions = Array.from({ length: pointCount }, (_, i) => paddingLeft + i * gap)
-
-
-// Mapas dos dados
-const iaeData = chartData.map((d) => d.structured_dropout_index)
-const tapData = chartData.map((d) => d.relative_dropout_index)
-const taprogData = chartData.map((d) => d.progressive_dropout_rate)
-const xLabels = chartData.map((d) => d.label)
 
 
 
@@ -114,6 +73,15 @@ interface Student {
   averageICP: number
 }
 
+interface DropoutData {
+  label: string,
+  iae: number
+  tap: number,
+  taProg: number
+
+}
+
+
 export default function MetricsDashboard() {
   const [showResults, setShowResults] = useState(false)
   const [activeMetric, setActiveMetric] = useState<"ICP" | "IAE">("ICP")
@@ -145,6 +113,41 @@ export default function MetricsDashboard() {
   const [availableStudents, setAvailableStudents] = useState<Student[]>([])
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([])
   const [turmaAverage, setTurmaAvarage] = useState()
+
+  //IAE range Data
+  const [chartData, setchartData] = useState<DropoutData[]>([])
+  type DropoutDataPoint = {
+    label: string
+    iae: number // IAE
+    tap: number   // TAP
+    taProg: number // TAProg
+  }  
+  const pointCount = chartData.length
+  const totalWidth = 400
+  const paddingLeft = 0
+  const paddingRight = 0
+  const chartWidth = totalWidth - paddingLeft - paddingRight
+  const gap = chartWidth / (pointCount - 1)
+  //teste
+  const getYPos = (value: number) => {
+    const min = 0
+    const max = 100
+    const chartHeight = 200
+    const padding = 10 // margem para os pontos não fugirem
+    const range = max - min
+  
+    return padding + (chartHeight - 2 * padding) * (1 - (value - min) / range)
+  }
+  const xPositions = Array.from({ length: pointCount }, (_, i) => paddingLeft + i * gap)
+  ''
+  
+  // Mapas dos dados
+  const iaeData = chartData.map((d) => d.iae)
+  const tapData = chartData.map((d) => d.tap)
+  const taprogData = chartData.map((d) => d.taProg)
+  const xLabels = chartData.map((d) => d.label)
+  
+
 
   // Only store history for range de datas
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistory[]>([])
@@ -210,7 +213,39 @@ export default function MetricsDashboard() {
   const [endTime, setEndTime] = useState("")
 
   // Reset configuration when changing collection type
-  const handleCollectionTypeChange = (newType: "range" | "periodica") => {
+  const handleCollectionTypeChange = async (newType: "range" | "periodica") => {
+
+    /*
+    let response
+
+    if (newType === "periodica") {
+      if (activeMetric == "ICP") {
+        response = await axios.post("http://localhost:8095/v1/map/metrics/participation-consistency-index",
+          newRangeDatesICP,
+          { headers: { Authorization: `Bearer ${acessToken}` } })
+      }
+      else {
+        response = await axios.post("http://localhost:8095/v1/map/metrics/participation-consistency-index",
+          newRangeDatesICP,
+          { headers: { Authorization: `Bearer ${acessToken}` } })
+      }
+
+      if (response.data.length) {
+        //chamar o grafico
+      }
+
+      else {
+        clearConfig(newType)
+      }
+
+    }
+    else {*/
+    clearConfig(newType)
+    //}
+
+  }
+
+  const clearConfig = (newType: "range" | "periodica") => {
     setCollectionType(newType)
     // Reset configuration data
     setSelectedJourney(null)
@@ -316,7 +351,19 @@ export default function MetricsDashboard() {
 
         axios.post("http://localhost:8095/v1/map/metrics/structured-dropout-index",
           newRangeDatesIAE,
-          { headers: { Authorization: `Bearer ${acessToken}` } })
+          { headers: { Authorization: `Bearer ${acessToken}` } }).
+          then(response => {
+            const dropoutData = response.data.points_indexes.map((value: any) => ({
+              label: value.label,
+              iae: (value.iae * 100).toFixed(2),
+              tap:  (value.tap * 100).toFixed(2),
+              taProg:  (value.ta_prog * 100).toFixed(2) 
+            }))
+            setchartData(dropoutData)
+
+          })
+
+        /*
 
         const newAnalysis: AnalysisHistory = {
           id: Date.now().toString(),
@@ -327,9 +374,10 @@ export default function MetricsDashboard() {
           result: Math.floor(Math.random() * 40) + 40,
           type: activeMetric,
           collectionType,
-          students: []
+          dropoutData
         }
         setAnalysisHistory([newAnalysis, ...analysisHistory])
+        */
       }
 
 
