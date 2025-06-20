@@ -15,19 +15,29 @@ import axios from "axios"
 import { Value } from "@radix-ui/react-select"
 import { List } from "postcss/lib/list"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { CalendarIcon, InfoIcon, ClockIcon } from "lucide-react"
+import { CalendarIcon, InfoIcon, ClockIcon, AlertCircle } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import Index from "."
+import HistoricalCollectionsPanel from "."
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NDk3MDMwOTUsImlhdCI6MTc0OTY4ODY5NX0.aTnEO92s4YVrecpH0GAnq3KHLNrRzZshl2rcLxquBIQBsb2XXpsKM8FYgEoDImgIzkUPLMgFCIvQ24XIKJJtqA"
+import { ChartDataPoint } from "@/types/chart-data"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 
-
-
-
-
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTAzOTkzMDYsImlhdCI6MTc1MDM4NDkwNn0.Xg0RNmYE6EMrfMxm1kioaWKJbaY7tKCH1xAq8XoC16yYCIq1wrhof79a8oN0KOKDDTQnbZNpHR377N7zziBP3w"
 interface AnalysisHistory {
   id: string
   journey: any
@@ -51,6 +61,19 @@ interface RangeDatesICP {
   weight_y: number
   start_date: Date
   end_date: Date
+}
+
+interface PeriodicICP {
+  map_id: string
+  convergence_point: boolean
+  divergence_point: boolean
+  essay_point: boolean
+  dynamic_weights: boolean
+  weight_x: number
+  weight_y: number
+  start_date: Date
+  end_date: Date
+  periodicity: string
 }
 
 interface RangeDatesIAE {
@@ -121,7 +144,7 @@ export default function MetricsDashboard() {
     iae: number // IAE
     tap: number   // TAP
     taProg: number // TAProg
-  }  
+  }
   const pointCount = chartData.length
   const totalWidth = 400
   const paddingLeft = 0
@@ -135,23 +158,27 @@ export default function MetricsDashboard() {
     const chartHeight = 200
     const padding = 10 // margem para os pontos não fugirem
     const range = max - min
-  
+
     return padding + (chartHeight - 2 * padding) * (1 - (value - min) / range)
   }
   const xPositions = Array.from({ length: pointCount }, (_, i) => paddingLeft + i * gap)
   ''
-  
   // Mapas dos dados
   const iaeData = chartData.map((d) => d.iae)
   const tapData = chartData.map((d) => d.tap)
   const taprogData = chartData.map((d) => d.taProg)
   const xLabels = chartData.map((d) => d.label)
-  
+
 
 
   // Only store history for range de datas
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistory[]>([])
   const [currentHistoryItem, setCurrentHistoryItem] = useState<AnalysisHistory | null>(null)
+
+
+  // 
+  const [alertCalculateICP, setAlertCalculateICP] =  useState(false)
+
 
   const [journeys, setJourneys] = useState<any[]>(
     []
@@ -205,6 +232,18 @@ export default function MetricsDashboard() {
     }
   }
 
+
+  const [isOpen, setIsOpen] = useState(true);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    // Adicione aqui qualquer lógica adicional antes de fechar
+  };
+
+
+  //Periodic ICP
+  const [chartDataPoints, setChartDataPoints] = useState<ChartDataPoint[]>([])
+
   const [periodicidade, setPeriodicidade] = useState("Anual")
   const [collectionType, setCollectionType] = useState<"range" | "periodica">(
     activeMetric === "ICP" ? "range" : "periodica",
@@ -214,24 +253,22 @@ export default function MetricsDashboard() {
 
   // Reset configuration when changing collection type
   const handleCollectionTypeChange = async (newType: "range" | "periodica") => {
-
-    /*
     let response
 
     if (newType === "periodica") {
+      setCollectionType(newType)
       if (activeMetric == "ICP") {
-        response = await axios.post("http://localhost:8095/v1/map/metrics/participation-consistency-index",
-          newRangeDatesICP,
+        response = await axios.get("http://localhost:8095/v1/map/metrics/in-progress-periodic-icp",
           { headers: { Authorization: `Bearer ${acessToken}` } })
       }
       else {
-        response = await axios.post("http://localhost:8095/v1/map/metrics/participation-consistency-index",
-          newRangeDatesICP,
+        response = await axios.post("http://localhost:8095/v1/map/metrics/in-progress-periodic-iae",
           { headers: { Authorization: `Bearer ${acessToken}` } })
       }
 
-      if (response.data.length) {
-        //chamar o grafico
+      if (response.data.length !== 0) {
+        setShowResults(true)
+        setChartDataPoints(response.data)
       }
 
       else {
@@ -239,9 +276,9 @@ export default function MetricsDashboard() {
       }
 
     }
-    else {*/
-    clearConfig(newType)
-    //}
+    else {
+      clearConfig(newType)
+    }
 
   }
 
@@ -336,7 +373,7 @@ export default function MetricsDashboard() {
       }
 
       //Calcular IAE
-      if (collectionType === "range" && activeMetric === "IAE") {
+      else if (collectionType === "range" && activeMetric === "IAE") {
         const newRangeDatesIAE: RangeDatesIAE = {
           map_id: selectedMap.id,
           convergence_point: pointTypes.decisao,
@@ -356,8 +393,8 @@ export default function MetricsDashboard() {
             const dropoutData = response.data.points_indexes.map((value: any) => ({
               label: value.label,
               iae: (value.iae * 100).toFixed(2),
-              tap:  (value.tap * 100).toFixed(2),
-              taProg:  (value.ta_prog * 100).toFixed(2) 
+              tap: (value.tap * 100).toFixed(2),
+              taProg: (value.ta_prog * 100).toFixed(2)
             }))
             setchartData(dropoutData)
 
@@ -379,6 +416,38 @@ export default function MetricsDashboard() {
         setAnalysisHistory([newAnalysis, ...analysisHistory])
         */
       }
+
+      else if (activeMetric === "ICP" && collectionType === "periodica") {
+        if (showResults) {
+          setAlertCalculateICP(true)
+        }
+        else {
+          const newRangeDatesICP: PeriodicICP = {
+            map_id: selectedMap.id,
+            convergence_point: pointTypes.decisao,
+            divergence_point: pointTypes.debate,
+            essay_point: pointTypes.avaliacao,
+            dynamic_weights: dynamicWeights,
+            weight_x: icpWeights.pesoGAP[0],
+            weight_y: icpWeights.pesoRPP[0],
+            start_date: new Date(startDate),
+            end_date: new Date(endDate),
+            periodicity: periodicidade
+          }
+
+          axios.post("http://localhost:8095/v1/map/metrics/periodic-icp",
+            newRangeDatesICP,
+            { headers: { Authorization: `Bearer ${acessToken}` } })
+
+          //Se tiver um grafico em andamento dizer que precisa primeiro dar stop
+
+          //se nao mostra o resultado 
+
+
+        }
+      }
+
+      else { }
 
 
       setCurrentHistoryItem(null)
@@ -539,12 +608,10 @@ export default function MetricsDashboard() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Anual">Anual</SelectItem>
-                        <SelectItem value="Semestral">Semestral</SelectItem>
-                        <SelectItem value="Trimestral">Trimestral</SelectItem>
-                        <SelectItem value="Mensal">Mensal</SelectItem>
-                        <SelectItem value="Semanal">Semanal</SelectItem>
-                        <SelectItem value="Diário">Diário</SelectItem>
+                        <SelectItem value="MINUTE">MINUTE</SelectItem>
+                        <SelectItem value="MONTHLY">Mensal</SelectItem>
+                        <SelectItem value="WEEKLY">Semanal</SelectItem>
+                        <SelectItem value="DAILY">Diário</SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -916,31 +983,47 @@ export default function MetricsDashboard() {
             </Card>
           </div>
 
+
+          <AlertDialog open={alertCalculateICP}  onOpenChange={setAlertCalculateICP}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  Coleta Periódica em Andamento
+                </AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-2">
+                    <div>
+                      Existe uma <strong>coleta periódica em andamento</strong>. Aguarde sua finalização ou interrompa-a para iniciar uma nova coleta.
+                    </div>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              <AlertDialogFooter>
+                <AlertDialogAction asChild>
+                  <Button onClick={handleClose}>
+                    OK
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* Results Panel */}
           <div className="lg:col-span-3 space-y-6">
+
             {showResults ? (
               <>
+
                 {/* Results Header */}
-                <div className={`${activeMetric === "ICP" ? "bg-green-600" : "bg-blue-600"} text-white p-4 rounded-lg`}>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5" />
-                    <h1 className="text-lg font-semibold">
-                      Resultados - {activeMetric} {currentHistoryItem && "(Histórico)"}
-                    </h1>
-                  </div>
-                  <p className="text-sm opacity-90">
-                    {collectionType === "range" ? "Análise por Range de Datas" : `Análise Periódica - ${periodicidade}`}
-                  </p>
-                  <p className="text-xs opacity-75">
-                    Jornada: {currentHistoryItem ? currentHistoryItem.journey.title : selectedJourney.title}
-                  </p>
-                  <p className="text-xs opacity-75">
-                    Jornada: {currentHistoryItem ? currentHistoryItem.map.title : selectedMap.title}
-                  </p>
-                </div>
+
+
+                {activeMetric === "ICP" && collectionType === "periodica" && <Index chartDataPoints={chartDataPoints} setShowResults={setShowResults}/> && <HistoricalCollectionsPanel/>}
+
 
                 {/* Student Selection for ICP */}
-                {activeMetric === "ICP" && (
+                {activeMetric === "ICP" && collectionType === "range" && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">
@@ -989,104 +1072,6 @@ export default function MetricsDashboard() {
                                   </button>
                                 </Badge>
                               ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Line Chart for ICP Periodic Collection */}
-                        {collectionType === "periodica" && (
-                          <div className="mt-6">
-                            <div className="relative h-64 bg-gray-50 rounded-lg p-4">
-                              <div className="h-48 relative">
-                                {/* Y-axis labels (0-100) */}
-                                <div className="absolute left-2 top-0 text-xs text-gray-500">100</div>
-                                <div className="absolute left-2 top-12 text-xs text-gray-500">75</div>
-                                <div className="absolute left-2 top-24 text-xs text-gray-500">50</div>
-                                <div className="absolute left-2 top-36 text-xs text-gray-500">25</div>
-                                <div className="absolute left-2 bottom-8 text-xs text-gray-500">0</div>
-
-                                <svg className="absolute inset-8 w-full h-full" viewBox="0 0 400 160">
-                                  {/* Grid lines */}
-                                  <line x1="0" y1="32" x2="400" y2="32" stroke="#e5e7eb" strokeWidth="1" />
-                                  <line x1="0" y1="64" x2="400" y2="64" stroke="#e5e7eb" strokeWidth="1" />
-                                  <line x1="0" y1="96" x2="400" y2="96" stroke="#e5e7eb" strokeWidth="1" />
-                                  <line x1="0" y1="128" x2="400" y2="128" stroke="#e5e7eb" strokeWidth="1" />
-
-                                  {/* Turma line (fixed) */}
-                                  <polyline
-                                    points="50,85 150,80 250,75 350,70"
-                                    fill="none"
-                                    stroke="#6b7280"
-                                    strokeWidth="3"
-                                    strokeDasharray="5,5"
-                                  />
-
-                                  {/* Student lines */}
-                                  {selectedStudents.map((student, index) => {
-                                    const color = student.averageICP > turmaAverage! ? "#10b981" : "#ef4444"
-                                    const yPos = 160 - student.averageICP * 1.6
-                                    return (
-                                      <polyline
-                                        key={student.id}
-                                        points={`50,${yPos + 10} 150,${yPos + 5} 250,${yPos} 350,${yPos - 5}`}
-                                        fill="none"
-                                        stroke={color}
-                                        strokeWidth="2"
-                                      />
-                                    )
-                                  })}
-
-                                  {/* Data points */}
-                                  <circle cx="50" cy="85" r="3" fill="#6b7280" />
-                                  <circle cx="150" cy="80" r="3" fill="#6b7280" />
-                                  <circle cx="250" cy="75" r="3" fill="#6b7280" />
-                                  <circle cx="350" cy="70" r="3" fill="#6b7280" />
-
-                                  {selectedStudents.map((student, index) => {
-                                    const color = student.averageICP > turmaAverage! ? "#10b981" : "#ef4444"
-                                    const yPos = 160 - student.averageICP * 1.6
-                                    return (
-                                      <g key={student.id}>
-                                        <circle cx="50" cy={yPos + 10} r="3" fill={color} />
-                                        <circle cx="150" cy={yPos + 5} r="3" fill={color} />
-                                        <circle cx="250" cy={yPos} r="3" fill={color} />
-                                        <circle cx="350" cy={yPos - 5} r="3" fill={color} />
-                                      </g>
-                                    )
-                                  })}
-                                </svg>
-
-                                {/* X-axis labels (Time based on periodicidade) */}
-                                {getTimeLabels().map((label, index) => (
-                                  <div
-                                    key={index}
-                                    className="absolute bottom-2 text-xs text-gray-500"
-                                    style={{ left: `${12 + index * 20}%` }}
-                                  >
-                                    {label}
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Legend */}
-                              <div className="mt-4 flex flex-wrap gap-4 text-xs">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-4 h-0.5 bg-gray-500" style={{ borderStyle: "dashed" }}></div>
-                                  <span>Turma ({turmaAverage}%)</span>
-                                </div>
-                                {selectedStudents.map((student) => (
-                                  <div key={student.id} className="flex items-center gap-2">
-                                    <div
-                                      className={`w-4 h-0.5 ${student.averageICP > turmaAverage! ? "bg-green-500" : "bg-red-500"}`}
-                                    ></div>
-                                    <span
-                                      className={student.averageICP > turmaAverage! ? "text-green-600" : "text-red-600"}
-                                    >
-                                      {student.name} ({student.averageICP}%)
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
                             </div>
                           </div>
                         )}
@@ -1370,7 +1355,7 @@ export default function MetricsDashboard() {
                 )}
 
                 {/* Average Display for ICP */}
-                {activeMetric === "ICP" && (
+                {activeMetric === "ICP" && collectionType === "range" && (
                   <Card className="bg-red-50 border-red-200">
                     <CardContent className="p-6 text-center">
                       <div className="flex items-center justify-center gap-2 mb-2">
@@ -1442,8 +1427,13 @@ export default function MetricsDashboard() {
                   )}
                 </CardContent>
               </Card>
+              
             )}
+            
           </div>
+
+
+          
         </div>
       </div>
     </div>
