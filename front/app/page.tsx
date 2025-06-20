@@ -21,8 +21,6 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Index from "."
-import HistoricalCollectionsPanel from "."
-
 import { ChartDataPoint } from "@/types/chart-data"
 import {
   AlertDialog,
@@ -35,6 +33,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
+import { ICPLegend } from "./ICPLegend";
+
 
 
 const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTAzOTkzMDYsImlhdCI6MTc1MDM4NDkwNn0.Xg0RNmYE6EMrfMxm1kioaWKJbaY7tKCH1xAq8XoC16yYCIq1wrhof79a8oN0KOKDDTQnbZNpHR377N7zziBP3w"
@@ -177,7 +177,7 @@ export default function MetricsDashboard() {
 
 
   // 
-  const [alertCalculateICP, setAlertCalculateICP] =  useState(false)
+  const [alertCalculateICP, setAlertCalculateICP] = useState(false)
 
 
   const [journeys, setJourneys] = useState<any[]>(
@@ -505,7 +505,6 @@ export default function MetricsDashboard() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Dashboard de Métricas</h1>
-          <p className="text-gray-600">Análise de ICP e IAE com configurações personalizadas</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -517,7 +516,7 @@ export default function MetricsDashboard() {
                   <Calculator className="w-5 h-5" />
                   Configuração
                 </CardTitle>
-                <p className="text-sm opacity-90">Configure os parâmetros para cálculo das métricas</p>
+                <p className="text-sm opacity-90">Configuração dos parâmetros para o cálculo personalizado das métricas.</p>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 {/* Metric Type Tabs */}
@@ -561,8 +560,8 @@ export default function MetricsDashboard() {
                   <p className="text-sm text-blue-800">
                     <strong>Dashboard descritivo {activeMetric}:</strong>{" "}
                     {activeMetric === "ICP"
-                      ? "Análise do Índice de Contribuição de Participação dos alunos"
-                      : "Análise do Índice de Adequação Estrutural dos pontos"}
+                      ? "Análise do Índice de Consistência de Participação"
+                      : "Análise do Índice de Abandono Estruturado"}
                   </p>
                 </div>
 
@@ -651,20 +650,28 @@ export default function MetricsDashboard() {
                       </div>
 
                       {/* Data Final */}
+
                       <div>
                         <Label className="text-xs text-gray-500">Data Final</Label>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
-                              className={cn("w-full mt-1 pl-3 text-left font-normal", !endDate && "text-muted-foreground")}
+                              className={cn("w-full mt-1 pl-3 text-left font-normal", !startDate && "text-muted-foreground")}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {endDate ? format(endDate, "dd/MM/yyyy") : <span>Selecione</span>}
+                              {startDate ? format(startDate, "dd/MM/yyyy") : <span>Selecione</span>}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                            <Calendar
+                              mode="single"
+                              selected={endDate}
+                              onSelect={setEndDate}
+                              initialFocus
+                              // Adicione esta linha para permitir apenas datas a partir de hoje
+                              fromDate={new Date()}
+                            />
                           </PopoverContent>
                         </Popover>
                       </div>
@@ -685,7 +692,14 @@ export default function MetricsDashboard() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                            <Calendar
+                              mode="single"
+                              selected={startDate}
+                              onSelect={setStartDate}
+                              initialFocus
+                              // Adicione esta linha para permitir apenas datas a partir de hoje
+                              fromDate={new Date()}
+                            />
                           </PopoverContent>
                         </Popover>
                       </div>
@@ -704,19 +718,26 @@ export default function MetricsDashboard() {
 
                       {/* Data Final */}
                       <div>
-                        <Label className="text-xs text-gray-500">Data Término</Label>
+                        <Label className="text-xs text-gray-500">Data Final</Label>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
-                              className={cn("w-full mt-1 pl-3 text-left font-normal", !endDate && "text-muted-foreground")}
+                              className={cn("w-full mt-1 pl-3 text-left font-normal", !startDate && "text-muted-foreground")}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {endDate ? format(endDate, "dd/MM/yyyy") : <span>Selecione</span>}
+                              {startDate ? format(startDate, "dd/MM/yyyy") : <span>Selecione</span>}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                            <Calendar
+                              mode="single"
+                              selected={endDate}
+                              onSelect={setEndDate}
+                              initialFocus
+                              // Adicione esta linha para permitir apenas datas a partir de hoje
+                              fromDate={new Date()}
+                            />
                           </PopoverContent>
                         </Popover>
                       </div>
@@ -984,7 +1005,7 @@ export default function MetricsDashboard() {
           </div>
 
 
-          <AlertDialog open={alertCalculateICP}  onOpenChange={setAlertCalculateICP}>
+          <AlertDialog open={alertCalculateICP} onOpenChange={setAlertCalculateICP}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2">
@@ -1017,9 +1038,7 @@ export default function MetricsDashboard() {
               <>
 
                 {/* Results Header */}
-
-
-                {activeMetric === "ICP" && collectionType === "periodica" && <Index chartDataPoints={chartDataPoints} setShowResults={setShowResults}/> && <HistoricalCollectionsPanel/>}
+                {activeMetric === "ICP" && collectionType === "periodica" && <Index chartDataPoints={chartDataPoints} setShowResults={setShowResults} />}
 
 
                 {/* Student Selection for ICP */}
@@ -1082,7 +1101,7 @@ export default function MetricsDashboard() {
 
                 {/* ICP Comparison (only for range de datas) */}
                 {activeMetric === "ICP" && collectionType === "range" && (
-                  <Card>
+                  <><Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">
                         <TrendingUp className="w-4 h-4" />
@@ -1117,15 +1136,15 @@ export default function MetricsDashboard() {
                           <div className="w-full bg-gray-200 rounded-full h-3">
                             <div
                               className={`h-3 rounded-full ${student.averageICP > currentHistoryItem?.result! ? "bg-green-500" : "bg-red-500"}`}
-                              style={{ width: `${student.averageICP}%` }}
-                            />
+                              style={{ width: `${student.averageICP}%` }} />
                           </div>
                         </div>
                       ))}
 
 
                     </CardContent>
-                  </Card>
+                  </Card><ICPLegend /></>
+
                 )}
 
                 {/* IAE Line Chart */}
@@ -1353,19 +1372,6 @@ export default function MetricsDashboard() {
                     </CardContent>
                   </Card>
                 )}
-
-                {/* Average Display for ICP */}
-                {activeMetric === "ICP" && collectionType === "range" && (
-                  <Card className="bg-red-50 border-red-200">
-                    <CardContent className="p-6 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <TrendingUp className="w-5 h-5 text-red-600" />
-                        <span className="text-sm font-medium text-red-800">ICP Médio da Turma</span>
-                      </div>
-                      <div className="text-4xl font-bold text-red-600">{(currentHistoryItem?.result)}%</div>
-                    </CardContent>
-                  </Card>
-                )}
               </>
             ) : (
               <>
@@ -1427,13 +1433,13 @@ export default function MetricsDashboard() {
                   )}
                 </CardContent>
               </Card>
-              
+
             )}
-            
+
           </div>
 
 
-          
+
         </div>
       </div>
     </div>
