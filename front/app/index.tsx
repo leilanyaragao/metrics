@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, SetStateAction, Dispatch } from 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { mockChartData, mockHistoricalCollections } from "../data/mock-data";
+import { ICPLegend } from "./ICPLegend";
 import {
   BarChart3,
   TrendingUp,
@@ -60,8 +61,7 @@ interface Props {
   setShowResults:  Dispatch<SetStateAction<boolean>>
 }
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTAzOTkzMDYsImlhdCI6MTc1MDM4NDkwNn0.Xg0RNmYE6EMrfMxm1kioaWKJbaY7tKCH1xAq8XoC16yYCIq1wrhof79a8oN0KOKDDTQnbZNpHR377N7zziBP3w"
-
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTA2NTg2ODMsImlhdCI6MTc1MDY0NDI4M30.z4Pc-7bney3rXNnKd21zPOeHSJx5JDFznyiB6Wq9hkDvroY9iwy4KvBMp_FotGPNhWiNKn1e9SOlAlQxNT6E-g"
 export default function Index({ chartDataPoints, setShowResults }: Props) {
   const [selectedStudents, setSelectedStudents] = useState<SelectedStudent[]>(
     [],
@@ -76,11 +76,12 @@ export default function Index({ chartDataPoints, setShowResults }: Props) {
     try {
       setIsStoppingCollection(true);
 
-      const response = await axios.patch("http://localhost:8095/v1/map/metrics/stop-periodic-icp", {},
+      const response = await axios.patch("http://localhost:8095/v1/metrics/icp/periodic/stop", {},
         { headers: { Authorization: `Bearer ${acessToken}` } })
 
         setShowResults(false)
 
+        
       // Se a chamada foi bem-sucedida, atualizar o estado
       setIsCollectionActive(false);
     } catch (error) {
@@ -551,118 +552,7 @@ const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
         </div>
 
         {/* ICP Classification Information Card */}
-        <Card className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-slate-200 dark:border-slate-700 mb-8">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-              <Target className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-              Entendendo os Níveis de ICP
-            </CardTitle>
-            <CardDescription className="text-slate-600 dark:text-slate-400">
-              Classificação dos índices de participação e contribuição dos
-              alunos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div
-                className="p-4 rounded-lg"
-                style={{ backgroundColor: "rgb(240, 253, 244)" }}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div
-                    className="w-4 h-4 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: "rgb(34, 197, 94)" }}
-                  />
-                  <div
-                    className="font-semibold text-lg"
-                    style={{ color: "rgb(34, 197, 94)" }}
-                  >
-                    90-100%
-                  </div>
-                </div>
-                <div className="font-medium text-slate-900 dark:text-white mb-1">
-                  Excelente
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">
-                  Participação excelente e sem lacunas
-                </div>
-              </div>
-
-              <div
-                className="p-4 rounded-lg"
-                style={{ backgroundColor: "rgb(239, 246, 255)" }}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div
-                    className="w-4 h-4 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: "rgb(59, 130, 246)" }}
-                  />
-                  <div
-                    className="font-semibold text-lg"
-                    style={{ color: "rgb(59, 130, 246)" }}
-                  >
-                    80-89%
-                  </div>
-                </div>
-                <div className="font-medium text-slate-900 dark:text-white mb-1">
-                  Boa
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">
-                  Participação boa, mas com algumas pequenas variações
-                </div>
-              </div>
-
-              <div
-                className="p-4 rounded-lg"
-                style={{ backgroundColor: "rgb(255, 251, 235)" }}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div
-                    className="w-4 h-4 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: "rgb(245, 158, 11)" }}
-                  />
-                  <div
-                    className="font-semibold text-lg"
-                    style={{ color: "rgb(245, 158, 11)" }}
-                  >
-                    50-79%
-                  </div>
-                </div>
-                <div className="font-medium text-slate-900 dark:text-white mb-1">
-                  Irregular
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">
-                  Participação irregular, com algumas lacunas significativas
-                </div>
-              </div>
-
-              <div
-                className="p-4 rounded-lg"
-                style={{ backgroundColor: "rgb(254, 242, 242)" }}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div
-                    className="w-4 h-4 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: "rgb(239, 68, 68)" }}
-                  />
-                  <div
-                    className="font-semibold text-lg"
-                    style={{ color: "rgb(239, 68, 68)" }}
-                  >
-                    0-49%
-                  </div>
-                </div>
-                <div className="font-medium text-slate-900 dark:text-white mb-1">
-                  Baixa
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">
-                  Participação baixa ou esporádica, requerendo atenção
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+        <ICPLegend />
         {/* Historical Collections Section */}
         <Card className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-slate-200 dark:border-slate-700 mb-8">
           <CardHeader>
@@ -746,10 +636,7 @@ const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                        <Clock className="h-3 w-3" />
-                        <span>{collection.duration_minutes} min</span>
-                      </div>
+                      
 
                       <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                         <Clock className="h-3 w-3" />

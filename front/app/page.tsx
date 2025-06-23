@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Index from "."
+import { SelectionPointsCard } from "./SelectPointsCard"
+import { HistoryCard } from "./HistoryCard"
 import { ChartDataPoint } from "@/types/chart-data"
 import {
   AlertDialog,
@@ -34,10 +36,11 @@ import {
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { ICPLegend } from "./ICPLegend";
+import { HistoryItem } from "@/types/dashboard";
 
 
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTA2NTg2ODMsImlhdCI6MTc1MDY0NDI4M30.z4Pc-7bney3rXNnKd21zPOeHSJx5JDFznyiB6Wq9hkDvroY9iwy4KvBMp_FotGPNhWiNKn1e9SOlAlQxNT6E-g"
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTAzOTkzMDYsImlhdCI6MTc1MDM4NDkwNn0.Xg0RNmYE6EMrfMxm1kioaWKJbaY7tKCH1xAq8XoC16yYCIq1wrhof79a8oN0KOKDDTQnbZNpHR377N7zziBP3w"
 interface AnalysisHistory {
   id: string
   journey: any
@@ -57,8 +60,8 @@ interface RangeDatesICP {
   divergence_point: boolean
   essay_point: boolean
   dynamic_weights: boolean
-  weight_x: number
-  weight_y: number
+  weight_gap: number
+  weight_rpp: number
   start_date: Date
   end_date: Date
 }
@@ -69,8 +72,8 @@ interface PeriodicICP {
   divergence_point: boolean
   essay_point: boolean
   dynamic_weights: boolean
-  weight_x: number
-  weight_y: number
+  weight_gap: number
+  weight_rpp: number
   start_date: Date
   end_date: Date
   periodicity: string
@@ -104,14 +107,20 @@ interface DropoutData {
 
 }
 
+interface Points {
+  avaliacao: boolean,
+  debate: boolean
+  decisao: boolean,
+}
+
 
 export default function MetricsDashboard() {
   const [showResults, setShowResults] = useState(false)
   const [activeMetric, setActiveMetric] = useState<"ICP" | "IAE">("ICP")
   const [selectedJourney, setSelectedJourney] = useState<any>(null)
   const [selectedMap, setSelectedMap] = useState<any>(null)
-  const [startDate, setStartDate] = useState<any>(null)
-  const [endDate, setEndDate] = useState("")
+  const [startDate, setStartDate] = useState<Date | undefined>()
+  const [endDate, setEndDate] = useState<Date | undefined>()
   const [pointTypes, setPointTypes] = useState({
     avaliacao: true,
     debate: true,
@@ -136,6 +145,33 @@ export default function MetricsDashboard() {
   const [availableStudents, setAvailableStudents] = useState<Student[]>([])
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([])
   const [turmaAverage, setTurmaAvarage] = useState()
+
+
+  //Range ICP
+  //selected Points
+  const [selectedPointsRangeICP, setSelectedPointsRangeICP] = useState<Points>({} as Points)
+
+  //Hisotry
+  const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const handleHistoryItemSelect = (item: HistoryItem) => {
+    setSelectedHistoryItem(item);
+    setIsSidebarOpen(true);
+  };
+   // Simulate data loading
+   useEffect(() => {
+    setIsLoading(true);
+    // Simulate API call delay
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+
 
   //IAE range Data
   const [chartData, setchartData] = useState<DropoutData[]>([])
@@ -184,7 +220,7 @@ export default function MetricsDashboard() {
     []
   )
   useEffect(() => {
-    axios.get("http://localhost:8095/v1/map/metrics/journeys", { headers: { Authorization: `Bearer ${acessToken}` } }).then(
+    axios.get("http://localhost:8095/v1/metrics/journeys/my", { headers: { Authorization: `Bearer ${acessToken}` } }).then(
       value => setJourneys(value.data))
   },
     [])
@@ -258,11 +294,11 @@ export default function MetricsDashboard() {
     if (newType === "periodica") {
       setCollectionType(newType)
       if (activeMetric == "ICP") {
-        response = await axios.get("http://localhost:8095/v1/map/metrics/in-progress-periodic-icp",
+        response = await axios.get("http://localhost:8095/v1/metrics/icp/periodic/in-progress",
           { headers: { Authorization: `Bearer ${acessToken}` } })
       }
       else {
-        response = await axios.post("http://localhost:8095/v1/map/metrics/in-progress-periodic-iae",
+        response = await axios.post("http://localhost:8095/v1/metrics/iae/periodic/in-progress",
           { headers: { Authorization: `Bearer ${acessToken}` } })
       }
 
@@ -334,16 +370,25 @@ export default function MetricsDashboard() {
           divergence_point: pointTypes.debate,
           essay_point: pointTypes.avaliacao,
           dynamic_weights: dynamicWeights,
-          weight_x: icpWeights.pesoGAP[0],
-          weight_y: icpWeights.pesoRPP[0],
+          weight_gap: icpWeights.pesoGAP[0],
+          weight_rpp: icpWeights.pesoRPP[0],
           start_date: new Date(startDate),
           end_date: new Date(endDate),
         }
 
-        axios.post("http://localhost:8095/v1/map/metrics/participation-consistency-index",
+        axios.post("http://localhost:8095/v1/metrics/icp/range",
           newRangeDatesICP,
           { headers: { Authorization: `Bearer ${acessToken}` } }).
           then(response => {
+            setSelectedPointsRangeICP(
+              {
+                avaliacao: response.data.essay_point,
+                debate: response.data.divergence_point,
+                decisao: response.data.convergence_point,
+
+              }
+            )
+            
             const students = response.data.participation_consistency_per_users.map((value: any) => ({
               id: value.user_id,
               name: value.user_name,
@@ -386,7 +431,7 @@ export default function MetricsDashboard() {
           end_date: new Date(endDate),
         }
 
-        axios.post("http://localhost:8095/v1/map/metrics/structured-dropout-index",
+        axios.post("http://localhost:8095/v1/metrics/iae/range",
           newRangeDatesIAE,
           { headers: { Authorization: `Bearer ${acessToken}` } }).
           then(response => {
@@ -428,14 +473,14 @@ export default function MetricsDashboard() {
             divergence_point: pointTypes.debate,
             essay_point: pointTypes.avaliacao,
             dynamic_weights: dynamicWeights,
-            weight_x: icpWeights.pesoGAP[0],
-            weight_y: icpWeights.pesoRPP[0],
+            weight_gap: icpWeights.pesoGAP[0],
+            weight_rpp: icpWeights.pesoRPP[0],
             start_date: new Date(startDate),
             end_date: new Date(endDate),
             periodicity: periodicidade
           }
 
-          axios.post("http://localhost:8095/v1/map/metrics/periodic-icp",
+          axios.post("http://localhost:8095/v1/metrics/icp/periodic",
             newRangeDatesICP,
             { headers: { Authorization: `Bearer ${acessToken}` } })
 
@@ -657,21 +702,14 @@ export default function MetricsDashboard() {
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
-                              className={cn("w-full mt-1 pl-3 text-left font-normal", !startDate && "text-muted-foreground")}
+                              className={cn("w-full mt-1 pl-3 text-left font-normal", !endDate && "text-muted-foreground")}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {startDate ? format(startDate, "dd/MM/yyyy") : <span>Selecione</span>}
+                              {endDate ? format(endDate, "dd/MM/yyyy") : <span>Selecione</span>}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={endDate}
-                              onSelect={setEndDate}
-                              initialFocus
-                              // Adicione esta linha para permitir apenas datas a partir de hoje
-                              fromDate={new Date()}
-                            />
+                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
                           </PopoverContent>
                         </Popover>
                       </div>
@@ -723,10 +761,10 @@ export default function MetricsDashboard() {
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
-                              className={cn("w-full mt-1 pl-3 text-left font-normal", !startDate && "text-muted-foreground")}
+                              className={cn("w-full mt-1 pl-3 text-left font-normal", !endDate && "text-muted-foreground")}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {startDate ? format(startDate, "dd/MM/yyyy") : <span>Selecione</span>}
+                              {endDate ? format(endDate, "dd/MM/yyyy") : <span>Selecione</span>}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
@@ -1141,11 +1179,26 @@ export default function MetricsDashboard() {
                         </div>
                       ))}
 
+                      {/* Selection Points */}
+                      <div>
+                        <h4 className="text-lg font-semibold text-slate-800 mb-4">
+                          Pontos Selecionados
+                        </h4>
+                        <SelectionPointsCard
+                          debate={selectedPointsRangeICP.debate}
+                          avaliacao={selectedPointsRangeICP.avaliacao}
+                          decisao={selectedPointsRangeICP.decisao}
+                        />
+                      </div>
 
                     </CardContent>
                   </Card><ICPLegend /></>
 
+
+
                 )}
+
+
 
                 {/* IAE Line Chart */}
                 {activeMetric === "IAE" && (
@@ -1389,50 +1442,19 @@ export default function MetricsDashboard() {
             )}
 
             {/* Analysis History - Only for Range de Datas */}
-            {collectionType === "range" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <History className="w-4 h-4" />
-                    Histórico de Análises {activeMetric}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {analysisHistory.filter(
-                    (analysis) => analysis.type === activeMetric && analysis.collectionType === "range",
-                  ).length > 0 ? (
-                    <div className="space-y-3">
-                      {analysisHistory
-                        .filter((analysis) => analysis.type === activeMetric && analysis.collectionType === "range")
-                        .map((analysis) => (
-                          <div
-                            key={analysis.id}
-                            className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                            onClick={() => handleHistoryClick(analysis)}
-                          >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <div className="font-medium text-sm">Jornada: {analysis.journey.title}</div>
-                                <div className="text-xs text-gray-600">Mapa: {analysis.map.title}</div>
-                                <div className="text-xs text-gray-600">Data da criação: {formatarDataHora(analysis.date)}</div>
-                                <div className="text-xs text-gray-600">Período de análise: {formatarPeriodoBr(analysis.period)}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-bold text-purple-600">{analysis.type}</div>
-                                <div className="text-lg font-bold">{analysis.result}%</div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <History className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                      <p className="text-sm">Nenhuma análise {activeMetric} realizada ainda</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+            {collectionType === "range" && activeMetric == "ICP" && (
+              < div className="mt-16">
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                    Histórico de Turmas
+                  </h2>
+                  <p className="text-slate-600">
+                    Visualize e compare dados históricos de diferentes turmas
+                  </p>
+                </div>
+
+              
+              </div>
 
             )}
 
@@ -1442,6 +1464,6 @@ export default function MetricsDashboard() {
 
         </div>
       </div>
-    </div>
+    </div >
   )
 }
