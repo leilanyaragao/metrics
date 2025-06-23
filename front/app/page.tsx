@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import Index from "."
 import { SelectionPointsCard } from "./SelectPointsCard"
 import { HistoryCard } from "./HistoryCard"
+import {WeightsCard} from "./WeightsCard"
 import { ChartDataPoint } from "@/types/chart-data"
 import {
   AlertDialog,
@@ -109,8 +110,14 @@ interface DropoutData {
 
 interface Points {
   avaliacao: boolean,
-  debate: boolean
+  debate: boolean,
   decisao: boolean,
+}
+
+interface Weights {
+  dynamic_weights: boolean,
+  weight_x: number,
+  weight_y: number
 }
 
 
@@ -119,8 +126,8 @@ export default function MetricsDashboard() {
   const [activeMetric, setActiveMetric] = useState<"ICP" | "IAE">("ICP")
   const [selectedJourney, setSelectedJourney] = useState<any>(null)
   const [selectedMap, setSelectedMap] = useState<any>(null)
-  const [startDate, setStartDate] = useState<Date | undefined>()
-  const [endDate, setEndDate] = useState<Date | undefined>()
+  const [startDate, setStartDate] = useState<Date>()
+  const [endDate, setEndDate] = useState<Date>()
   const [pointTypes, setPointTypes] = useState({
     avaliacao: true,
     debate: true,
@@ -150,6 +157,7 @@ export default function MetricsDashboard() {
   //Range ICP
   //selected Points
   const [selectedPointsRangeICP, setSelectedPointsRangeICP] = useState<Points>({} as Points)
+  const [selectedWeightsRangeICP, setSelectedWeightsRangeICP] = useState<Weights>({} as Weights)
 
   //Hisotry
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
@@ -160,8 +168,8 @@ export default function MetricsDashboard() {
     setSelectedHistoryItem(item);
     setIsSidebarOpen(true);
   };
-   // Simulate data loading
-   useEffect(() => {
+  // Simulate data loading
+  useEffect(() => {
     setIsLoading(true);
     // Simulate API call delay
     const timer = setTimeout(() => {
@@ -388,7 +396,15 @@ export default function MetricsDashboard() {
 
               }
             )
-            
+            setSelectedWeightsRangeICP(
+              {
+                dynamic_weights:false,
+                weight_x: response.data.weight_gap,
+                weight_y: response.data.weight_rpp,
+
+              }
+            )
+
             const students = response.data.participation_consistency_per_users.map((value: any) => ({
               id: value.user_id,
               name: value.user_name,
@@ -1191,6 +1207,18 @@ export default function MetricsDashboard() {
                         />
                       </div>
 
+                      <WeightsCard
+                        dynamicWeights={selectedWeightsRangeICP.dynamic_weights}
+                        weightX={selectedWeightsRangeICP.weight_x}
+                        weightY={selectedWeightsRangeICP.weight_y}
+                        weightXName="Peso do GAP"
+                        weightXDescription="Mede a regularidade das participações, penalizando alunos que interagem de forma intercalada."
+                        weightXAbbreviation="GAP"
+                        weightYName="Peso do RPP"
+                        weightYDescription="Mede a continuidade das participações, penalizando ausências prolongadas ao longo do tempo."
+                        weightYAbbreviation="RPP"
+                      />
+
                     </CardContent>
                   </Card><ICPLegend /></>
 
@@ -1453,7 +1481,7 @@ export default function MetricsDashboard() {
                   </p>
                 </div>
 
-              
+
               </div>
 
             )}
