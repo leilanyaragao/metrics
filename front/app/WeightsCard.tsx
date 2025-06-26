@@ -136,7 +136,7 @@ export const WeightsCard: React.FC<WeightsCardProps> = ({
                     variant="outline"
                     className="bg-blue-50 text-blue-700 border-blue-200 font-semibold"
                   >
-                    {weightX.toFixed(1)}%
+                    {weightX}%
                   </Badge>
                 </div>
               </div>
@@ -161,7 +161,7 @@ export const WeightsCard: React.FC<WeightsCardProps> = ({
                     variant="outline"
                     className="bg-green-50 text-green-700 border-green-200 font-semibold"
                   >
-                    {weightY.toFixed(1)}%
+                    {weightY}%
                   </Badge>
                 </div>
               </div>
@@ -184,9 +184,8 @@ export const WeightsCard: React.FC<WeightsCardProps> = ({
                   />
                 </svg>
                 <span className="font-medium">
-                  Total: {(weightX + weightY).toFixed(1)}%
+                  Total: {(weightX + weightY)}%
                 </span>            
-                
               </div>
             </div>
           </div>

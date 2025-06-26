@@ -12,8 +12,6 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Calculator, History, TrendingUp, Info, Users, X } from "lucide-react"
 import axios from "axios"
-import { Value } from "@radix-ui/react-select"
-import { List } from "postcss/lib/list"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { CalendarIcon, InfoIcon, ClockIcon, AlertCircle } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
@@ -23,8 +21,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import Index from "."
 import { SelectionPointsCard } from "./SelectPointsCard"
 import { HistoryCard } from "./HistoryCard"
-import {WeightsCard} from "./WeightsCard"
+import { WeightsCard } from "./WeightsCard"
 import { ChartDataPoint } from "@/types/chart-data"
+import { Class, Student } from "@/types/dashboard"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,9 +37,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ICPLegend } from "./ICPLegend";
 import { HistoryItem } from "@/types/dashboard";
+import { Informations } from "@/components/Informations"
+import { DetailSidebar } from "@/components/DetailSidebar"
 
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTA2NTg2ODMsImlhdCI6MTc1MDY0NDI4M30.z4Pc-7bney3rXNnKd21zPOeHSJx5JDFznyiB6Wq9hkDvroY9iwy4KvBMp_FotGPNhWiNKn1e9SOlAlQxNT6E-g"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTA5MTE5NDMsImlhdCI6MTc1MDg5NzU0M30.xDlVhJJ5PSnidALxP0XNRPqOPL4dtKnZjdxb2ukP0E9DYrkgy_bAgUUEnYzMFb1u0QWlLmS8CwIk5Ruzy0lekA"
 
 interface AnalysisHistory {
   id: string
@@ -92,13 +93,7 @@ interface RangeDatesIAE {
   end_date: Date
 }
 
-interface Student {
-  id: string
-  name: string
-  averageRPP: number
-  averageGAP: number
-  averageICP: number
-}
+
 
 interface DropoutData {
   label: string,
@@ -158,12 +153,14 @@ export default function MetricsDashboard() {
   //selected Points
   const [selectedPointsRangeICP, setSelectedPointsRangeICP] = useState<Points>({} as Points)
   const [selectedWeightsRangeICP, setSelectedWeightsRangeICP] = useState<Weights>({} as Weights)
+  const [selectedClassRangeICP, setSelectedClassRangeICP] = useState<Class>({} as Class)
 
   //Hisotry
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
   const handleHistoryItemSelect = (item: HistoryItem) => {
     setSelectedHistoryItem(item);
     setIsSidebarOpen(true);
@@ -179,6 +176,10 @@ export default function MetricsDashboard() {
     return () => clearTimeout(timer);
   }, []);
 
+  const handleSidebarClose = () => {
+    setIsSidebarOpen(false);
+    setSelectedHistoryItem(null);
+  };
 
 
   //IAE range Data
@@ -322,17 +323,27 @@ export default function MetricsDashboard() {
     }
     else {
       clearConfig(newType)
+
+      response = await axios.get("http://localhost:8095/v1/metrics/icp/range/history",
+        { headers: { Authorization: `Bearer ${acessToken}` } })
+
+      setHistoryData(response.data)
+
     }
 
   }
+
+  useEffect(() => {
+    handleCollectionTypeChange("range")
+  }, [])
 
   const clearConfig = (newType: "range" | "periodica") => {
     setCollectionType(newType)
     // Reset configuration data
     setSelectedJourney(null)
     setSelectedMap(null)
-    setStartDate("")
-    setEndDate("")
+    setStartDate(undefined)
+    setEndDate(undefined)
     setStartTime("")
     setEndTime("")
     setPeriodicidade("Anual")
@@ -369,7 +380,7 @@ export default function MetricsDashboard() {
   };
 
   const handleCalculate = () => {
-    if (selectedJourney && selectedMap && startDate && (collectionType === "range" ? endDate : startTime)) {
+    if (selectedJourney && selectedMap && startDate && endDate) {
       // Only add to history if it's range de datas
       if (collectionType === "range" && activeMetric === "ICP") {
         const newRangeDatesICP: RangeDatesICP = {
@@ -398,12 +409,16 @@ export default function MetricsDashboard() {
             )
             setSelectedWeightsRangeICP(
               {
-                dynamic_weights:false,
+                dynamic_weights: false,
                 weight_x: response.data.weight_gap,
                 weight_y: response.data.weight_rpp,
 
               }
             )
+            setSelectedClassRangeICP({
+              journey_name: response.data.journey_name,
+              class_name: response.data.class_name
+            })
 
             const students = response.data.participation_consistency_per_users.map((value: any) => ({
               id: value.user_id,
@@ -1093,9 +1108,8 @@ export default function MetricsDashboard() {
 
                 {/* Results Header */}
                 {activeMetric === "ICP" && collectionType === "periodica" && <Index chartDataPoints={chartDataPoints} setShowResults={setShowResults} />}
+                <Informations selectedClassRangeICP={selectedClassRangeICP} />
 
-
-                {/* Student Selection for ICP */}
                 {activeMetric === "ICP" && collectionType === "range" && (
                   <Card>
                     <CardHeader>
@@ -1180,16 +1194,16 @@ export default function MetricsDashboard() {
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold">{student.averageICP}%</span>
                               <span
-                                className={`text-xs ${student.averageICP > currentHistoryItem?.result! ? "text-green-600" : "text-red-600"}`}
+                                className={`text-xs ${student.averageICP! > currentHistoryItem?.result! ? "text-green-600" : "text-red-600"}`}
                               >
-                                ({student.averageICP > currentHistoryItem?.result! ? "+" : ""}
-                                {(student.averageICP - currentHistoryItem?.result!).toFixed(2)}%)
+                                ({student.averageICP! > currentHistoryItem?.result! ? "+" : ""}
+                                {(student.averageICP! - currentHistoryItem?.result!).toFixed(2)}%)
                               </span>
                             </div>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-3">
                             <div
-                              className={`h-3 rounded-full ${student.averageICP > currentHistoryItem?.result! ? "bg-green-500" : "bg-red-500"}`}
+                              className={`h-3 rounded-full ${student.averageICP! > currentHistoryItem?.result! ? "bg-green-500" : "bg-red-500"}`}
                               style={{ width: `${student.averageICP}%` }} />
                           </div>
                         </div>
@@ -1471,18 +1485,37 @@ export default function MetricsDashboard() {
 
             {/* Analysis History - Only for Range de Datas */}
             {collectionType === "range" && activeMetric == "ICP" && (
-              < div className="mt-16">
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                    Histórico de Turmas
-                  </h2>
-                  <p className="text-slate-600">
-                    Visualize e compare dados históricos de diferentes turmas
-                  </p>
-                </div>
+              <>
+
+                <HistoryCard
+                  historyItems={historyData}
+                  onSelectItem={handleHistoryItemSelect}
+                  className="w-full"
+                  isLoading={isLoading}
+                />
 
 
-              </div>
+                <footer className="bg-white border-t border-slate-200 mt-12">
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-slate-500">
+                        Dashboard de Análise de Participação - Versão{" "}
+                      </p>
+
+
+
+                    </div>
+                  </div>
+                </footer>
+
+                {/* Detail Sidebar */}
+                <DetailSidebar
+                  item={selectedHistoryItem}
+                  isOpen={isSidebarOpen}
+                  onClose={handleSidebarClose}
+                  chartDataPoints={chartDataPoints}
+                />
+              </>
 
             )}
 

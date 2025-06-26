@@ -53,22 +53,24 @@ import {
   ChartDataPoint,
   ProcessedChartData,
   User,
-  SelectedStudent,
   ProcessedHistoricalCollection,
 } from "../types/chart-data";
+import { Student } from "@/types/dashboard";
+import { useChartDataStats } from "@/components/useChartDataStats";
 interface Props {
   chartDataPoints: ChartDataPoint[]
   setShowResults:  Dispatch<SetStateAction<boolean>>
 }
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTA2NTg2ODMsImlhdCI6MTc1MDY0NDI4M30.z4Pc-7bney3rXNnKd21zPOeHSJx5JDFznyiB6Wq9hkDvroY9iwy4KvBMp_FotGPNhWiNKn1e9SOlAlQxNT6E-g"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTA5MTE5NDMsImlhdCI6MTc1MDg5NzU0M30.xDlVhJJ5PSnidALxP0XNRPqOPL4dtKnZjdxb2ukP0E9DYrkgy_bAgUUEnYzMFb1u0QWlLmS8CwIk5Ruzy0lekA"
+
 export default function Index({ chartDataPoints, setShowResults }: Props) {
-  const [selectedStudents, setSelectedStudents] = useState<SelectedStudent[]>(
+  const [selectedStudents, setSelectedStudents] = useState<Student[]>(
     [],
   );
 
   // Callback otimizado para mudanças de estudantes
-  const handleStudentsChange = useCallback((students: SelectedStudent[]) => {
+  const handleStudentsChange = useCallback((students: Student[]) => {
     setSelectedStudents(students);
   }, []);
 
@@ -181,68 +183,7 @@ const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   );
 }, []);
 
-  const { chartData, allStudents, stats } = useMemo(() => {
-    // Extrair todos os alunos únicos de forma otimizada
-    const studentsMap = new Map<string, User>();
-    const classAverages: number[] = [];
-
-    chartDataPoints.forEach((dataPoint) => {
-      classAverages.push(dataPoint.class_average_icp);
-      dataPoint.participation_consistency_per_users.forEach((user) => {
-        if (!studentsMap.has(user.user_id)) {
-          studentsMap.set(user.user_id, user);
-        }
-      });
-    });
-
-    const uniqueStudents = Array.from(studentsMap.values());
-
-    // Processar dados para o gráfico de forma eficiente
-    const processedData: ProcessedChartData[] = chartDataPoints.map(
-      (dataPoint) => {
-        const baseData: ProcessedChartData = {
-          date: dataPoint.created_at,
-          timestamp: new Date(dataPoint.created_at).getTime(),
-          class_average_icp: dataPoint.class_average_icp,
-        };
-
-        // Adicionar dados de cada aluno para este ponto temporal
-        dataPoint.participation_consistency_per_users.forEach((user) => {
-          baseData[user.user_id] = user.user_average_icp;
-        });
-
-        return baseData;
-      },
-    );
-
-    // Ordenar por timestamp uma única vez
-    processedData.sort((a, b) => a.timestamp - b.timestamp);
-
-    // Calcular estatísticas de forma eficiente
-    const latestDataPoint = chartDataPoints[chartDataPoints.length - 1];
-    const classAverage =
-      classAverages.reduce((sum, avg) => sum + avg, 0) / classAverages.length;
-    const minICP = Math.min(...classAverages);
-    const maxICP = Math.max(...classAverages);
-
-    return {
-      chartData: processedData,
-      allStudents: uniqueStudents,
-      stats: {
-        totalDataPoints: processedData.length,
-        classAverage,
-        minICP,
-        maxICP,
-        totalStudents: uniqueStudents.length,
-        activeStudents:
-          latestDataPoint?.participation_consistency_per_users.length ?? 0,
-        latestUpdate: latestDataPoint?.created_at,
-        selectedStudentsCount: selectedStudents.length,
-        isLargeDataset:
-          processedData.length > 100 || uniqueStudents.length > 50,
-      },
-    };
-  }, [selectedStudents.length]); // Só recalcular quando o número de estudantes selecionados mudar
+  const { chartData, allStudents, stats } = useChartDataStats(chartDataPoints, selectedStudents)
 
   // Estatísticas dos estudantes selecionados
   const selectedStudentsStats = useMemo(() => {
@@ -302,7 +243,7 @@ const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
               ) : (
                 <Badge
                   variant="outline"
-                  className="border-red-200 text-red-700 bg-red-50 dark:border-red-800 dark:text-red-300 dark:bg-red-900/20"
+                  className="bozrder-red-200 text-red-700 bg-red-50 dark:border-red-800 dark:text-red-300 dark:bg-red-900/20"
                 >
                   <Square className="h-3 w-3 mr-1" />
                   Coleta Finalizada

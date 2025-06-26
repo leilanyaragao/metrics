@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { User, SelectedStudent } from "../types/chart-data";
+import { User } from "../types/chart-data";
+import { Student } from "@/types/dashboard";
 
 interface StudentSelectorProps {
   students: User[];
-  selectedStudents: SelectedStudent[];
-  onStudentsChange: (students: SelectedStudent[]) => void;
+  selectedStudents: Student[];
+  onStudentsChange: (students: Student[]) => void;
 }
 
 // Gerador de cores HSL para garantir cores distintas
@@ -37,7 +38,7 @@ export function StudentSelector({
 
   const handleStudentToggle = (student: User, checked: boolean) => {
     if (checked) {
-      const newStudent: SelectedStudent = {
+      const newStudent: Student = {
         id: student.user_id,
         name: student.user_name,
         color: generateColor(selectedStudents.length),
@@ -166,7 +167,7 @@ export function StudentSelector({
                           handleStudentToggle(student, !isSelected)
                         }
                       >
-                        <Checkbox checked={isSelected} readOnly />
+                        <Checkbox checked={isSelected} />
 
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-slate-900 dark:text-white truncate">

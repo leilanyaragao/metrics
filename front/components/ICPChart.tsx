@@ -11,11 +11,12 @@ import {
 } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ProcessedChartData, SelectedStudent } from "../types/chart-data";
+import { ProcessedChartData } from "../types/chart-data";
+import { Student } from "@/types/dashboard";
 
 interface ICPChartProps {
   data: ProcessedChartData[];
-  selectedStudents: SelectedStudent[];
+  selectedStudents: Student[];
   totalStudents: number
 }
 

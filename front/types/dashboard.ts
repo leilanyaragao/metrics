@@ -77,9 +77,21 @@ export interface UserParticipation {
     end_date: string;
     weight_gap: number;
     weight_rpp: number;
-    // Pontos de seleção
     divergence_point: boolean;
     essay_point: boolean;
     convergence_point: boolean;
   }
-  
+
+  export interface Class {
+    journey_name: string,
+    class_name: string,
+  }
+
+  export interface Student {
+    id: string
+    name: string
+    averageRPP?: number
+    averageGAP?: number
+    averageICP?: number
+    color?: string
+  }
