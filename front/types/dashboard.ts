@@ -33,31 +33,10 @@ export interface UserParticipation {
     description: string;
     color: string;
   }
-  
-  export interface HistoryItem {
-    map_id: string;
-    class_name: string;
-    periodic_collection: boolean;
-    class_average_gap: number;
-    class_average_rpp: number;
-    class_average_icp: number;
-    participation_consistency_per_users: UserParticipation[];
-    periodic_icpid: string | null;
-    user_id: string;
-    active: boolean;
-    id: string;
-    version: number;
-    created_at: string;
-    created_by: string;
-    updated_at: string;
-    updated_by: string;
-    ancestors: any[];
-  }
-
 
   export interface HistoryItem {
     map_id: string;
-    jpitney_name: string;
+    journey_name: string;
     class_name: string;
     periodic_collection: boolean;
     class_average_gap: number;
@@ -94,4 +73,17 @@ export interface UserParticipation {
     averageGAP?: number
     averageICP?: number
     color?: string
+  }
+
+  export interface AnalysisHistory {
+    id: string
+    journey: any
+    map: any
+    date: string
+    period: string
+    result: number
+    type: "ICP" | "IAE"
+    collectionType: "range" | "periodica"
+    periodicidade?: string
+    students: Student[]
   }

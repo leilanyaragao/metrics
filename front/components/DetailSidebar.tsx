@@ -10,6 +10,8 @@ import { HistoryItem, Student } from "@/types/dashboard";
 import { cn } from "@/lib/utils";
 import { ChartDataPoint } from "@/types/chart-data"
 import { useChartDataStats } from "./useChartDataStats";
+import { CardContent } from "./ui/card";
+import { ICPRangeChart } from "./ICPRangeChart";
 
 
 interface DetailSidebarProps {
@@ -28,13 +30,13 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
   const [selectedStudents, setSelectedStudents] = useState<Student[]>(
     [],
   );
- 
+
   const handleSelectionChange = (students: Student[]) => {
     setSelectedStudents(students);
   };
 
   const { chartData, allStudents, stats } = useChartDataStats(chartDataPoints, selectedStudents)
-
+  console.log(chartDataPoints)
 
   if (!item) return null;
 
@@ -48,7 +50,7 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
     });
   };
 
-  
+
   return (
     <>
       {/* Overlay */}
@@ -134,21 +136,11 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-50 p-4 rounded-lg">
-              <h4 className="font-medium text-slate-700 mb-2">Criação</h4>
-              <p className="text-sm text-slate-600">
-                {formatDate(item.created_at)}
-              </p>
-            </div>
-            <div className="bg-slate-50 p-4 rounded-lg">
-              <h4 className="font-medium text-slate-700 mb-2">
-                Última Atualização
-              </h4>
-              <p className="text-sm text-slate-600">
-                {formatDate(item.updated_at)}
-              </p>
-            </div>
+          <div className="bg-slate-50 p-2 rounded-lg">
+            <h4 className="font-medium text-slate-700 mb-2">Criação</h4>
+            <p className="text-sm text-slate-600">
+              {formatDate(item.created_at)}
+            </p>
           </div>
 
           {/* Student Selection */}
@@ -162,7 +154,12 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
               onStudentsChange={handleSelectionChange}
             />
           </div>
-          
+
+          {/* Chart */}
+          <ICPRangeChart
+            selectedStudents={selectedStudents}
+            currentHistoryItem={item}
+          />
 
           {/* Selection Points */}
           <div>
@@ -194,48 +191,11 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
             />
           </div>
 
-          {/* Chart */}
-          <div>
-            <h4 className="text-lg font-semibold text-slate-800 mb-4">
-              Comparação de ICP
-            </h4>
-            <ICPChart
-              data={chartData}
-              selectedStudents={selectedStudents}
-              totalStudents={allStudents.length}
-            />
-          </div>
-
           {/* Legend */}
           <div>
             <ICPLegend />
           </div>
-
-          {/* Technical Info */}
-          <div className="bg-slate-50 p-4 rounded-lg">
-            <h4 className="font-medium text-slate-700 mb-3">
-              Informações Técnicas
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-600">
-              <div>
-                <span className="font-medium">Map ID:</span> {item.map_id}
-              </div>
-              <div>
-                <span className="font-medium">Versão:</span> {item.version}
-              </div>
-              <div>
-                <span className="font-medium">ID:</span> {item.id}
-              </div>
-              <div>
-                <span className="font-medium">GAP Médio:</span>{" "}
-                {(item.class_average_gap * 100).toFixed(1)}%
-              </div>
-              <div>
-                <span className="font-medium">RPP Médio:</span>{" "}
-                {(item.class_average_rpp * 100).toFixed(1)}%
-              </div>
-            </div>
-          </div>
+          
         </div>
       </div>
     </>

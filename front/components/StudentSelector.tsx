@@ -41,6 +41,9 @@ export function StudentSelector({
       const newStudent: Student = {
         id: student.user_id,
         name: student.user_name,
+        averageICP: student.user_average_icp,
+        averageRPP: student.user_average_rpp,
+        averageGAP: student.user_average_gap,
         color: generateColor(selectedStudents.length),
       };
       onStudentsChange([...selectedStudents, newStudent]);

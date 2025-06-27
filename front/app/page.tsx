@@ -23,7 +23,7 @@ import { SelectionPointsCard } from "./SelectPointsCard"
 import { HistoryCard } from "./HistoryCard"
 import { WeightsCard } from "./WeightsCard"
 import { ChartDataPoint } from "@/types/chart-data"
-import { Class, Student } from "@/types/dashboard"
+import { AnalysisHistory, Class, Student } from "@/types/dashboard"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,20 +41,9 @@ import { Informations } from "@/components/Informations"
 import { DetailSidebar } from "@/components/DetailSidebar"
 
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTA5MTE5NDMsImlhdCI6MTc1MDg5NzU0M30.xDlVhJJ5PSnidALxP0XNRPqOPL4dtKnZjdxb2ukP0E9DYrkgy_bAgUUEnYzMFb1u0QWlLmS8CwIk5Ruzy0lekA"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTEwMDUwMjUsImlhdCI6MTc1MDk5MDYyNX0.LP0FgQVhU1Fuce8nwTTwPMrI4YGXIck5orevslZzu9jTod-rIty_b-xeYlzP5zpqbDPxlzlQ4NMrIPwP6AzGog"
 
-interface AnalysisHistory {
-  id: string
-  journey: any
-  map: any
-  date: string
-  period: string
-  result: number
-  type: "ICP" | "IAE"
-  collectionType: "range" | "periodica"
-  periodicidade?: string
-  students: Student[]
-}
+
 
 interface RangeDatesICP {
   map_id: string
@@ -1514,15 +1503,13 @@ export default function MetricsDashboard() {
                   isOpen={isSidebarOpen}
                   onClose={handleSidebarClose}
                   chartDataPoints={chartDataPoints}
+    
                 />
               </>
 
             )}
 
           </div>
-
-
-
         </div>
       </div>
     </div >
