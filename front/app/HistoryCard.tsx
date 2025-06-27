@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Pagination,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/pagination";
 import { HistoryItem } from "@/types/dashboard";
 import { cn } from "@/lib/utils";
+import { HistoryIcon, TrendingUp } from "lucide-react";
 
 interface HistoryCardProps {
   historyItems: HistoryItem[];
@@ -153,7 +154,12 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
         className,
       )}
     >
+      
       <CardHeader className="text-center pb-6">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <HistoryIcon className="w-4 h-4" />
+                        Comparação de ICP
+                      </CardTitle>
         <div className="space-y-2">
           <p className="text-slate-600 text-lg font-medium">
             {historyItems.length === 0
