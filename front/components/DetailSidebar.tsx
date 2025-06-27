@@ -95,18 +95,16 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
           </div>
 
           <div className="space-y-3">
+          <div>
+              <h3 className="font-medium text-purple-100">Jornada:</h3>
+              <p className="text-lg">{item.journey_name}</p>
+            </div>
             <div>
-              <h3 className="font-medium text-purple-100">Nome da Turma</h3>
+              <h3 className="font-medium text-purple-100">Mapa:</h3>
               <p className="text-lg">{item.class_name}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-purple-200">ICP Médio</p>
-                <p className="text-lg font-semibold">
-                  {(item.class_average_icp * 100).toFixed(1)}%
-                </p>
-              </div>
               <div>
                 <p className="text-sm text-purple-200">Total de Alunos</p>
                 <p className="text-lg font-semibold">
@@ -121,6 +119,7 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
                 {new Date(item.start_date).toLocaleDateString("pt-BR", {
                   day: "2-digit",
                   month: "2-digit",
+                  year: "numeric",
                 })}{" "}
                 até{" "}
                 {new Date(item.end_date).toLocaleDateString("pt-BR", {

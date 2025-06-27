@@ -33,12 +33,6 @@ export interface ProcessedChartData {
   [key: string]: number | string; // Para dados dinâmicos dos alunos
 }
 
-export interface SelectedStudent {
-  id: string;
-  name: string;
-  color: string;
-}
-
 // Raw structure from backend
 export interface HistoricalCollectionsResponse {
   [periodic_icpid: string]: ChartDataPoint[];

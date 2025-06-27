@@ -8,7 +8,6 @@ interface PropsICPRangeChart {
 
 
 export function ICPRangeChart({selectedStudents, currentHistoryItem}: PropsICPRangeChart) {
-  console.log(selectedStudents)
   return (
     <div>
       <CardContent className="space-y-4">
