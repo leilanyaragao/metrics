@@ -23,7 +23,7 @@ import { SelectionPointsCard } from "./SelectPointsCard"
 import { HistoryCard } from "./HistoryCard"
 import { WeightsCard } from "./WeightsCard"
 import { ChartDataPoint } from "@/types/chart-data"
-import { AnalysisHistory, Class, Student } from "@/types/dashboard"
+import { AnalysisHistory, Class, IAERange, IAERangeHistory, Student } from "@/types/dashboard"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,10 +39,11 @@ import { ICPLegend } from "./ICPLegend";
 import { HistoryItem } from "@/types/dashboard";
 import { Informations } from "@/components/Informations"
 import { DetailSidebar } from "@/components/DetailSidebar"
+import RangeSection from "@/components/IAERangeSection"
+import RangeHistorySection from "@/components/RangeHistorySection"
 
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTEwMzczMjMsImlhdCI6MTc1MTAyMjkyM30.MYzbe85DjnXsd245XKphb6EXjmjYCYdnaPOQfO7S245VYdc2VSD6VXRXnRmYoxcBWHLZGcWy8yJNSmL0uQ-QMA"
-
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTEzMDkzMDgsImlhdCI6MTc1MTI5NDkwOH0.y4iZ_Omj06RhRO4yHItcE9GYbHvqTl9bZbWS_2KwQewHAOKuoW-yWtGPiLkh_sptcmoNFDU2iLhRajwnD_wBqw"
 
 interface RangeDatesICP {
   map_id: string
@@ -75,13 +76,11 @@ interface RangeDatesIAE {
   divergence_point: boolean
   essay_point: boolean
   dynamic_weights: boolean
-  weight_x: number
-  weight_y: number
+  weight_tap: number
+  weight_taprog: number
   start_date: Date
   end_date: Date
 }
-
-
 
 interface DropoutData {
   label: string,
@@ -169,9 +168,17 @@ export default function MetricsDashboard() {
     setSelectedHistoryItem(null);
   };
 
+  const handleHistoryCardClick = (historyItem: any) => {
+    setSelectedHistoryItem(historyItem);
+    setIsSidebarOpen(true);
+  };
 
   //IAE range Data
   const [chartData, setchartData] = useState<DropoutData[]>([])
+  const [IAERangeResponse, setIAERangeResponse] = useState<IAERange>()
+  const [IAERangeHistoryResponse, setIAERangeHistoryResponse] = useState<IAERange[]>([])
+
+
   type DropoutDataPoint = {
     label: string
     iae: number // IAE
@@ -312,11 +319,17 @@ export default function MetricsDashboard() {
     else {
       clearConfig(newType)
 
-      response = await axios.get("http://localhost:8095/v1/metrics/icp/range/history",
-        { headers: { Authorization: `Bearer ${acessToken}` } })
+      if (activeMetric == "ICP") {
+        response = await axios.get("http://localhost:8095/v1/metrics/icp/range/history",
+          { headers: { Authorization: `Bearer ${acessToken}` } })
+        setHistoryData(response.data)
 
-      setHistoryData(response.data)
-
+      }
+      else {
+        response = await axios.get("http://localhost:8095/v1/metrics/iae/range/history",
+          { headers: { Authorization: `Bearer ${acessToken}` } })
+      }
+      setIAERangeHistoryResponse(response.data)
     }
 
   }
@@ -415,6 +428,7 @@ export default function MetricsDashboard() {
               averageGAP: value.user_average_gap.toFixed(2),
               averageICP: value.user_average_icp.toFixed(2)
             }))
+
             setAvailableStudents(students)
             setTurmaAvarage(response.data.class_average_icp.toFixed(2))
 
@@ -444,8 +458,8 @@ export default function MetricsDashboard() {
           divergence_point: pointTypes.debate,
           essay_point: pointTypes.avaliacao,
           dynamic_weights: dynamicWeights,
-          weight_x: icpWeights.pesoGAP[0],
-          weight_y: icpWeights.pesoRPP[0],
+          weight_tap: iaeWeights.pesoTAP[0],
+          weight_taprog: iaeWeights.pesoTAProg[0],
           start_date: new Date(startDate),
           end_date: new Date(endDate),
         }
@@ -454,31 +468,33 @@ export default function MetricsDashboard() {
           newRangeDatesIAE,
           { headers: { Authorization: `Bearer ${acessToken}` } }).
           then(response => {
-            const dropoutData = response.data.points_indexes.map((value: any) => ({
-              label: value.label,
-              iae: (value.iae * 100).toFixed(2),
-              tap: (value.tap * 100).toFixed(2),
-              taProg: (value.ta_prog * 100).toFixed(2)
-            }))
-            setchartData(dropoutData)
-
+            const responseIAE: IAERange = {
+              map_id: response.data.map_id,
+              journey_name: response.data.journey_name,
+              class_name: response.data.class_name,
+              periodic_collection: response.data.periodic_collection,
+              points_indexes: response.data.points_indexes,
+              periodic_iaeid: response.data.periodic_iaeid,
+              user_id: response.data.user_id,
+              divergence_point: response.data.divergence_point,
+              convergence_point: response.data.convergence_point,
+              essay_point: response.data.essay_point,
+              start_date: response.data.start_date,
+              end_date: response.data.end_date,
+              dynamic_weights: response.data.dynamic_weights,
+              weight_tap: response.data.weight_tap,
+              weight_taprog: response.data.weight_taprog,
+              active: response.data.active,
+              id: response.data.id,
+              version: response.data.version,
+              created_at: response.data.created_at,
+              created_by: response.data.created_by,
+              updated_at: response.data.updated_at,
+              updated_by: response.data.updated_by,
+              ancestors: response.data.ancestors,
+            }
+            setIAERangeResponse(responseIAE)
           })
-
-        /*
-
-        const newAnalysis: AnalysisHistory = {
-          id: Date.now().toString(),
-          journey: selectedJourney,
-          map: selectedMap,
-          date: new Date().toLocaleDateString("pt-BR"),
-          period: `${startDate} - ${endDate}`,
-          result: Math.floor(Math.random() * 40) + 40,
-          type: activeMetric,
-          collectionType,
-          dropoutData
-        }
-        setAnalysisHistory([newAnalysis, ...analysisHistory])
-        */
       }
 
       else if (activeMetric === "ICP" && collectionType === "periodica") {
@@ -1223,237 +1239,16 @@ export default function MetricsDashboard() {
 
                     </CardContent>
                   </Card><ICPLegend /></>
-
-
-
                 )}
 
-
-
                 {/* IAE Line Chart */}
-                {activeMetric === "IAE" && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <TrendingUp className="w-4 h-4" />
-                        Análise IAE - {collectionType === "range" ? "Pontos do Mapa" : "Evolução Temporal"}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="relative h-80 bg-gray-50 rounded-lg p-6">
-                        <div className="h-64 relative" id="aleatorio">
-                          {/* Y-axis labels */}
-                          {[100, 75, 50, 25, 0].map((val, idx) => (
-                            <div key={idx} className="absolute left-0 text-xs text-gray-500" style={{ top: `${(100 - val) * 2}px` }}>
-                              {val}
-                            </div>
-                          ))}
-                          {/* Chart area */}
-                          <div className="absolute left-12 top-0 right-4 bottom-8">
-                            <svg className="w-full h-full" viewBox="0 0 400 200" preserveAspectRatio="none">
-                              {/* Horizontal grid lines */}
-                              {[0, 50, 100, 150, 200].map((y) => (
-                                <line
-                                  key={`h-${y}`}
-                                  x1={0}
-                                  y1={y}
-                                  x2={400}
-                                  y2={y}
-                                  stroke={y === 0 ? "#374151" : "#d1d5db"} // #374151 = gray-700, #d1d5db = gray-300
-                                  strokeWidth="1"
-                                  strokeDasharray={y === 0 ? "0" : "4 2"}
-                                />
-                              ))}
+                {activeMetric === "IAE" && collectionType === "range" && (
+                  <RangeSection
+                    iaeRangeResponse={IAERangeResponse!}
+                  />
 
-                              {/* Vertical grid lines */}
-                              {xPositions.map((x, i) => (
-                                <g key={`v-${i}`}>
-                                  <line
-                                    x1={x}
-                                    y1={0}
-                                    x2={x}
-                                    y2={200}
-                                    stroke={x === 0 ? "#374151" : "#d1d5db"}
-                                    strokeWidth="1"
-                                    strokeDasharray={x === 0 ? "0" : "4 2"}
-                                  />
-                                  {/* Label */}
-                                  <text
-                                    x={x}
-                                    y="215"
-                                    fontSize="10"
-                                    fill="#6b7280"
-                                    textAnchor="middle"
-                                  >
-                                    {chartData[i].label}
-                                  </text>
-                                </g>
-                              ))}
 
-                              {/* IAE polyline */}
-                              <polyline
-                                points={xPositions.map((x, i) => `${x},${getYPos(iaeData[i])}`).join(" ")}
-                                fill="none"
-                                stroke="#3b82f6"
-                                strokeWidth="1"
-                              />
 
-                              {/* TAP polyline */}
-                              <polyline
-                                points={xPositions.map((x, i) => `${x},${getYPos(tapData[i])}`).join(" ")}
-                                fill="none"
-                                stroke="#10b981"
-                                strokeWidth="1"
-                              />
-
-                              {/* TAProg polyline */}
-                              <polyline
-                                points={xPositions.map((x, i) => `${x},${getYPos(taprogData[i])}`).join(" ")}
-                                fill="none"
-                                stroke="#f59e0b"
-                                strokeWidth="1"
-                              />
-
-                              {/* Data points and hover areas */}
-                              {xPositions.map((x, i) => (
-                                <g key={i}>
-                                  <circle
-                                    cx={x}
-                                    cy={getYPos(iaeData[i])}
-                                    r="4"
-                                    fill="#3b82f6"
-                                    className="hover:r-6 cursor-pointer transition-all"
-                                  />
-                                  {/* Retângulo para TAP */}
-                                  <rect
-                                    x={x - 4}
-                                    y={getYPos(tapData[i]) - 4}
-                                    width="8"
-                                    height="8"
-                                    fill="#10b981"
-                                    className="cursor-pointer hover:scale-110 transition-transform"
-                                  />
-                                  <polygon
-                                    points={`
-                                      ${x},${getYPos(taprogData[i]) - 5} 
-                                      ${x - 5},${getYPos(taprogData[i]) + 5} 
-                                      ${x + 5},${getYPos(taprogData[i]) + 5}
-                                    `}
-                                    fill="#f59e0b"
-                                    className="cursor-pointer hover:scale-110 transition-transform"
-                                  />
-
-                                  {/* Hover rect */}
-                                  <rect
-                                    x={x - 20}
-                                    y={0}
-                                    width={40}
-                                    height={200}
-                                    fill="transparent"
-                                    className="cursor-pointer"
-                                    onMouseEnter={(e) => {
-                                      const tooltip = document.getElementById("tooltip")
-                                      if (tooltip) {
-                                        tooltip.style.display = "block"
-                                        tooltip.innerHTML = `
-                                          <div class="text-center font-semibold mb-1">${collectionType === "range" ? xLabels[i] : getTimeLabels()[i]}</div>
-                                          <div class="flex items-center gap-1">
-                                            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                            <span>IAE: ${iaeData[i]}%</span>
-                                          </div>
-                                          <div class="flex items-center gap-1">
-                                            <div class="w-2 h-2 bg-green-500"></div>
-                                            <span>TAP: ${tapData[i]}%</span>
-                                          </div>
-                                          <div class="flex items-center gap-1">
-                                            <div class="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-yellow-500"></div>
-                                            <span>TAProg: ${taprogData[i]}%</span>
-                                          </div>
-                                        `
-                                        const rect = (document.getElementById("aleatorio"))!.getBoundingClientRect()
-                                        tooltip.style.left = `${e.pageX - rect.left - 100}px`
-                                        tooltip.style.top = `${e.pageY - rect.top - 100}px`
-                                        console.log(e.pageX, rect.left, e.pageY, rect.top)
-
-                                      }
-                                    }}
-                                    onMouseLeave={() => {
-                                      const tooltip = document.getElementById("tooltip")
-                                      if (tooltip) tooltip.style.display = "none"
-                                    }}
-
-                                  />
-                                </g>
-                              ))}
-                            </svg>
-
-                            <div
-                              id="tooltip"
-                              className="absolute z-10 bg-white border border-gray-300 rounded-md px-2 py-1 shadow text-[10px] text-gray-800 font-sans transition-opacity duration-200"
-                              style={{ display: "none", pointerEvents: "none", top: 0, left: 0 }}
-                            ></div>
-
-                          </div>
-
-                          {/* X-axis labels */}
-                          <div className="absolute left-12 right-4 bottom-0 flex justify-between text-xs text-gray-500">
-                            {collectionType === "range"
-                              ? xLabels.map((label, i) => (
-                                <div key={i} className="text-center">
-                                  {label}
-                                </div>
-                              ))
-                              : getTimeLabels().map((label, i) => (
-                                <div key={i} className="text-center">
-                                  {label}
-                                </div>
-                              ))}
-                          </div>
-                        </div>
-
-                        {/* Legend */}
-                        <div className="mt-4 flex gap-6 text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-0.5 bg-blue-500"></div>
-                            <span>IAE - Índice de Abandono Estruturado</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-0.5 bg-green-500"></div>
-                            <span>TAP - Taxa de Abandono Relativa ao Ponto</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-0.5 bg-yellow-500"></div>
-                            <span>TAProg - Taxa de Abandono Progressiva</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Summary Cards */}
-                      <div className="grid grid-cols-3 gap-4 mt-6">
-                        <div className="p-4 border-l-4 border-blue-400 bg-blue-50 rounded-r-lg">
-                          <div className="text-sm font-medium text-blue-800">IAE Médio</div>
-                          <div className="text-2xl font-bold text-blue-600">
-                            {Math.round(iaeData.reduce((a, b) => a + b, 0) / iaeData.length)}%
-                          </div>
-                          <div className="text-xs text-blue-600">Índice de Adequação Estrutural</div>
-                        </div>
-                        <div className="p-4 border-l-4 border-green-400 bg-green-50 rounded-r-lg">
-                          <div className="text-sm font-medium text-green-800">TAP Médio</div>
-                          <div className="text-2xl font-bold text-green-600">
-                            {Math.round(tapData.reduce((a, b) => a + b, 0) / tapData.length)}%
-                          </div>
-                          <div className="text-xs text-green-600">Tempo de Adequação do Ponto</div>
-                        </div>
-                        <div className="p-4 border-l-4 border-yellow-400 bg-yellow-50 rounded-r-lg">
-                          <div className="text-sm font-medium text-yellow-800">TAProg Médio</div>
-                          <div className="text-2xl font-bold text-yellow-600">
-                            {Math.round(taprogData.reduce((a, b) => a + b, 0) / taprogData.length)}%
-                          </div>
-                          <div className="text-xs text-yellow-600">Tempo de Adequação Progressiva</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
                 )}
               </>
             ) : (
@@ -1502,10 +1297,16 @@ export default function MetricsDashboard() {
                   isOpen={isSidebarOpen}
                   onClose={handleSidebarClose}
                   chartDataPoints={chartDataPoints}
-    
+
                 />
               </>
 
+            )}
+            {collectionType === "range" && activeMetric == "IAE" && (
+              <RangeHistorySection
+                historyData={IAERangeHistoryResponse}
+                onHistoryCardClick={handleHistoryCardClick}
+              />
             )}
 
           </div>

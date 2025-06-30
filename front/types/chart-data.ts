@@ -24,6 +24,7 @@ export interface ChartDataPoint {
   updated_at: string;
   updated_by: string;
   ancestors: any[];
+  end_date: string;
 }
 
 export interface ProcessedChartData {
