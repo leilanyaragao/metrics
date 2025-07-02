@@ -9,13 +9,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { HistoryItem } from "@/types/dashboard";
+import { ICPRange } from "@/types/dashboard";
 import { cn } from "@/lib/utils";
 import { HistoryIcon, TrendingUp } from "lucide-react";
 
 interface HistoryCardProps {
-  historyItems: HistoryItem[];
-  onSelectItem: (item: HistoryItem) => void;
+  historyItems: ICPRange[];
+  onSelectItem: (item: ICPRange) => void;
   className?: string;
   isLoading?: boolean;
 }

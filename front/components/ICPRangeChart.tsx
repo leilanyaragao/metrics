@@ -1,8 +1,8 @@
-import {HistoryItem, Student } from "@/types/dashboard";
+import {ICPRange, Student } from "@/types/dashboard";
 import { CardContent } from "./ui/card";
 interface PropsICPRangeChart {
   selectedStudents: Student[]
-  currentHistoryItem: HistoryItem
+  currentHistoryItem: ICPRange
 }
 
 

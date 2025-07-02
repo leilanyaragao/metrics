@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { HistoryCard } from "./HistoryCard";
-import { HistoryItem } from "@/types/dashboard";
+import { ICPRange } from "@/types/dashboard";
 import axios from "axios"
 
 interface HistoryProps {
-  onSelectItem: (item: HistoryItem) => void;
+  onSelectItem: (item: ICPRange) => void;
 }
 
 const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTA2NTg2ODMsImlhdCI6MTc1MDY0NDI4M30.z4Pc-7bney3rXNnKd21zPOeHSJx5JDFznyiB6Wq9hkDvroY9iwy4KvBMp_FotGPNhWiNKn1e9SOlAlQxNT6E-g"
@@ -12,7 +12,7 @@ const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnV
 
 export const History: React.FC<HistoryProps> = ({ onSelectItem }) => {
   // Estados para o histórico
-  const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
+  const [historyData, setHistoryData] = useState<ICPRange[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
 
@@ -29,7 +29,7 @@ export const History: React.FC<HistoryProps> = ({ onSelectItem }) => {
       const apiData = await response.data();
 
       // Transform API data to dashboard format
-      const transformedData: HistoryItem[] = apiData.map((item: any) => {
+      const transformedData: ICPRange[] = apiData.map((item: any) => {
         // Calculate averages from points_indexes
         const totalPoints = item.points_indexes?.length || 0;
         const avgIae =
@@ -79,7 +79,7 @@ export const History: React.FC<HistoryProps> = ({ onSelectItem }) => {
           updated_by: item.updated_by,
           ancestors: item.ancestors || [],
           startDate: item.start_date,
-          endDate: item.end_date_time,
+          endDate: item.end_date,
           debate: item.divergence_point,
           avaliacao: item.essay_point,
           decisao: item.convergence_point,

@@ -23,7 +23,7 @@ import { SelectionPointsCard } from "./SelectPointsCard"
 import { HistoryCard } from "./HistoryCard"
 import { WeightsCard } from "./WeightsCard"
 import { ChartDataPoint } from "@/types/chart-data"
-import { AnalysisHistory, Class, IAERange, IAERangeHistory, Student } from "@/types/dashboard"
+import { AnalysisHistory, Class, IAERange, IAERangeHistory, points_indexes, Student } from "@/types/dashboard"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,14 +36,16 @@ import {
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { ICPLegend } from "./ICPLegend";
-import { HistoryItem } from "@/types/dashboard";
+import { ICPRange } from "@/types/dashboard";
 import { Informations } from "@/components/Informations"
 import { DetailSidebar } from "@/components/DetailSidebar"
 import RangeSection from "@/components/IAERangeSection"
 import RangeHistorySection from "@/components/RangeHistorySection"
+import RangeSidebar from "@/components/RangeIAESidebar"
 
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTEzMDkzMDgsImlhdCI6MTc1MTI5NDkwOH0.y4iZ_Omj06RhRO4yHItcE9GYbHvqTl9bZbWS_2KwQewHAOKuoW-yWtGPiLkh_sptcmoNFDU2iLhRajwnD_wBqw"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTE0MzU4MzgsImlhdCI6MTc1MTQyMTQzOH0.3wYhsN9SFSpOJbVLD7U25oM_-qcfmilFjYVgcr7XrLDpv8oDXOd3bGVYm-_RthR-U5Pr0veanZ_B_BH1mVqhUw"
+
 
 interface RangeDatesICP {
   map_id: string
@@ -143,15 +145,49 @@ export default function MetricsDashboard() {
   const [selectedClassRangeICP, setSelectedClassRangeICP] = useState<Class>({} as Class)
 
   //Hisotry
-  const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
-  const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
+  const [ICPRangeHistoryResponse, setICPRangeHistoryResponse] = useState<ICPRange[]>([]);
+  const [selectedICPRangeHistoryItem, setSelectedICPRangeHistoryItem] = useState<ICPRange | null>(null);
+  const [selectedIAERangeHistoryItem, setSelectedIAERangeHistoryItem] = useState<IAERange | null>(null);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleHistoryItemSelect = (item: HistoryItem) => {
-    setSelectedHistoryItem(item);
+
+
+  //IAE range Data
+  const [chartData, setchartData] = useState<DropoutData[]>([])
+  const [IAERangeResponse, setIAERangeResponse] = useState<IAERange>()
+  const [IAERangeHistoryResponse, setIAERangeHistoryResponse] = useState<IAERange[]>([])
+
+  const handleHistoryCardClick = (item: any) => {
+    setSelectedICPRangeHistoryItem(item);
+    setSelectedIAERangeHistoryItem(item);
     setIsSidebarOpen(true);
   };
+
+  const handleSidebarClose = () => {
+    setIsSidebarOpen(false);
+    setSelectedICPRangeHistoryItem(null);
+    setSelectedIAERangeHistoryItem(null);
+  };
+
+  const transformDataForChart = (data: IAERange) => {
+    return data?.points_indexes?.map((point: points_indexes) => ({
+      label: point.label,
+      IAE: Math.round(point.iae * 100),
+      TAP: Math.round(point.tap * 100),
+      "TA-PROG": Math.round(point.ta_prog * 100),
+    }));
+  };
+
+  const currentChartDataIAERangeHistory = transformDataForChart(IAERangeResponse!);
+
+
+  const selectedChartData = selectedIAERangeHistoryItem
+    ? transformDataForChart(selectedIAERangeHistoryItem)
+    : currentChartDataIAERangeHistory;
+
+
   // Simulate data loading
   useEffect(() => {
     setIsLoading(true);
@@ -162,21 +198,6 @@ export default function MetricsDashboard() {
 
     return () => clearTimeout(timer);
   }, []);
-
-  const handleSidebarClose = () => {
-    setIsSidebarOpen(false);
-    setSelectedHistoryItem(null);
-  };
-
-  const handleHistoryCardClick = (historyItem: any) => {
-    setSelectedHistoryItem(historyItem);
-    setIsSidebarOpen(true);
-  };
-
-  //IAE range Data
-  const [chartData, setchartData] = useState<DropoutData[]>([])
-  const [IAERangeResponse, setIAERangeResponse] = useState<IAERange>()
-  const [IAERangeHistoryResponse, setIAERangeHistoryResponse] = useState<IAERange[]>([])
 
 
   type DropoutDataPoint = {
@@ -291,13 +312,22 @@ export default function MetricsDashboard() {
   const [startTime, setStartTime] = useState("")
   const [endTime, setEndTime] = useState("")
 
+  function ConcatDateAndTime(date: Date, time: string): Date {
+    const [horas, minutos] = time.split(":").map(Number);
+  
+    const novaData = new Date(date);
+    novaData.setHours(horas, minutos, 0, 0); 
+  
+    return novaData;
+  }
+
   // Reset configuration when changing collection type
-  const handleCollectionTypeChange = async (newType: "range" | "periodica") => {
+  const handleCollectionTypeChange = async (metric: "ICP" | "IAE", newType: "range" | "periodica") => {
     let response
 
     if (newType === "periodica") {
       setCollectionType(newType)
-      if (activeMetric == "ICP") {
+      if (metric == "ICP") {
         response = await axios.get("http://localhost:8095/v1/metrics/icp/periodic/in-progress",
           { headers: { Authorization: `Bearer ${acessToken}` } })
       }
@@ -319,15 +349,18 @@ export default function MetricsDashboard() {
     else {
       clearConfig(newType)
 
-      if (activeMetric == "ICP") {
+      if (metric == "ICP") {
         response = await axios.get("http://localhost:8095/v1/metrics/icp/range/history",
           { headers: { Authorization: `Bearer ${acessToken}` } })
-        setHistoryData(response.data)
+          console.log("icp")
+        setICPRangeHistoryResponse(response.data)
 
       }
       else {
         response = await axios.get("http://localhost:8095/v1/metrics/iae/range/history",
           { headers: { Authorization: `Bearer ${acessToken}` } })
+          console.log("iae")
+
       }
       setIAERangeHistoryResponse(response.data)
     }
@@ -335,7 +368,7 @@ export default function MetricsDashboard() {
   }
 
   useEffect(() => {
-    handleCollectionTypeChange("range")
+    handleCollectionTypeChange(activeMetric, "range")
   }, [])
 
   const clearConfig = (newType: "range" | "periodica") => {
@@ -396,26 +429,28 @@ export default function MetricsDashboard() {
           end_date: new Date(endDate),
         }
 
-        axios.post("http://localhost:8095/v1/metrics/icp/range",
-          newRangeDatesICP,
-          { headers: { Authorization: `Bearer ${acessToken}` } }).
-          then(response => {
-            setSelectedPointsRangeICP(
-              {
-                avaliacao: response.data.essay_point,
-                debate: response.data.divergence_point,
-                decisao: response.data.convergence_point,
+        axios.post("http://localhost:8095/v1/metrics/icp/range", newRangeDatesICP, {
+          headers: { Authorization: `Bearer ${acessToken}` },
+        })
+          .then(response => {
+            // Verifica se os dados estão completos
+            if (!response.data) {
+              setShowResults(false)
+              return;
+            };
 
-              }
-            )
-            setSelectedWeightsRangeICP(
-              {
-                dynamic_weights: false,
-                weight_x: response.data.weight_gap,
-                weight_y: response.data.weight_rpp,
+            setSelectedPointsRangeICP({
+              avaliacao: response.data.essay_point,
+              debate: response.data.divergence_point,
+              decisao: response.data.convergence_point,
+            })
 
-              }
-            )
+            setSelectedWeightsRangeICP({
+              dynamic_weights: false,
+              weight_x: response.data.weight_gap,
+              weight_y: response.data.weight_rpp,
+            })
+
             setSelectedClassRangeICP({
               journey_name: response.data.journey_name,
               class_name: response.data.class_name
@@ -426,7 +461,7 @@ export default function MetricsDashboard() {
               name: value.user_name,
               averageRPP: value.user_average_rpp.toFixed(2),
               averageGAP: value.user_average_gap.toFixed(2),
-              averageICP: value.user_average_icp.toFixed(2)
+              averageICP: value.user_average_icp.toFixed(2),
             }))
 
             setAvailableStudents(students)
@@ -441,12 +476,16 @@ export default function MetricsDashboard() {
               result: response.data.class_average_icp.toFixed(2),
               type: activeMetric,
               collectionType,
-              students
+              students,
             }
 
             setAnalysisHistory([newAnalysis, ...analysisHistory])
             setCurrentHistoryItem(newAnalysis)
             setSelectedStudents([])
+          })
+          .catch(error => {
+            setShowResults(false)
+            console.error("Erro ao buscar dados do ICP:", error)
           })
       }
 
@@ -468,6 +507,11 @@ export default function MetricsDashboard() {
           newRangeDatesIAE,
           { headers: { Authorization: `Bearer ${acessToken}` } }).
           then(response => {
+            if (!response.data) {
+              setShowResults(false)
+              return;
+            };
+
             const responseIAE: IAERange = {
               map_id: response.data.map_id,
               journey_name: response.data.journey_name,
@@ -510,20 +554,14 @@ export default function MetricsDashboard() {
             dynamic_weights: dynamicWeights,
             weight_gap: icpWeights.pesoGAP[0],
             weight_rpp: icpWeights.pesoRPP[0],
-            start_date: new Date(startDate),
-            end_date: new Date(endDate),
+            start_date: ConcatDateAndTime(startDate, startTime) ,
+            end_date: ConcatDateAndTime(endDate, endTime),
             periodicity: periodicidade
           }
 
           axios.post("http://localhost:8095/v1/metrics/icp/periodic",
             newRangeDatesICP,
             { headers: { Authorization: `Bearer ${acessToken}` } })
-
-          //Se tiver um grafico em andamento dizer que precisa primeiro dar stop
-
-          //se nao mostra o resultado 
-
-
         }
       }
 
@@ -605,9 +643,12 @@ export default function MetricsDashboard() {
                     <button
                       onClick={() => {
                         setActiveMetric("ICP")
+                        handleCollectionTypeChange("ICP","range")
                         setShowResults(false)
                         setSelectedStudents([])
                         setCurrentHistoryItem(null)
+                        setSelectedIAERangeHistoryItem(null); // <-- LINHA CRÍTICA: Limpe o estado do IAE
+
                       }}
                       className={`w-full font-medium pb-1 ${activeMetric === "ICP"
                         ? "text-purple-600 border-b-2 border-purple-600"
@@ -621,9 +662,12 @@ export default function MetricsDashboard() {
                     <button
                       onClick={() => {
                         setActiveMetric("IAE")
+                        handleCollectionTypeChange("IAE","range")
                         setShowResults(false)
                         setSelectedStudents([])
                         setCurrentHistoryItem(null)
+                        setSelectedICPRangeHistoryItem(null); // <-- LINHA CRÍTICA: Limpe o estado do ICP
+
                       }}
                       className={`w-full font-medium pb-1 ${activeMetric === "IAE"
                         ? "text-purple-600 border-b-2 border-purple-600"
@@ -655,7 +699,7 @@ export default function MetricsDashboard() {
                         id="range"
                         name="coleta"
                         checked={collectionType === "range"}
-                        onChange={() => handleCollectionTypeChange("range")}
+                        onChange={() => handleCollectionTypeChange(activeMetric, "range")}
                         className="text-purple-600"
                       />
                       <label htmlFor="range" className="text-sm">
@@ -668,7 +712,7 @@ export default function MetricsDashboard() {
                         id="periodica"
                         name="coleta"
                         checked={collectionType === "periodica"}
-                        onChange={() => handleCollectionTypeChange("periodica")}
+                        onChange={() => handleCollectionTypeChange(activeMetric, "periodica")}
                         className="text-purple-600"
                       />
                       <label htmlFor="periodica" className="text-sm">
@@ -1247,8 +1291,6 @@ export default function MetricsDashboard() {
                     iaeRangeResponse={IAERangeResponse!}
                   />
 
-
-
                 )}
               </>
             ) : (
@@ -1271,8 +1313,8 @@ export default function MetricsDashboard() {
               <>
 
                 <HistoryCard
-                  historyItems={historyData}
-                  onSelectItem={handleHistoryItemSelect}
+                  historyItems={ICPRangeHistoryResponse}
+                  onSelectItem={handleHistoryCardClick}
                   className="w-full"
                   isLoading={isLoading}
                 />
@@ -1293,7 +1335,7 @@ export default function MetricsDashboard() {
 
                 {/* Detail Sidebar */}
                 <DetailSidebar
-                  item={selectedHistoryItem}
+                  item={selectedICPRangeHistoryItem}
                   isOpen={isSidebarOpen}
                   onClose={handleSidebarClose}
                   chartDataPoints={chartDataPoints}
@@ -1303,10 +1345,19 @@ export default function MetricsDashboard() {
 
             )}
             {collectionType === "range" && activeMetric == "IAE" && (
-              <RangeHistorySection
-                historyData={IAERangeHistoryResponse}
-                onHistoryCardClick={handleHistoryCardClick}
-              />
+              <>
+                <RangeHistorySection
+                  historyData={IAERangeHistoryResponse}
+                  onHistoryCardClick={handleHistoryCardClick}
+                />
+
+                <RangeSidebar
+                  isOpen={isSidebarOpen}
+                  selectedHistoryItem={selectedIAERangeHistoryItem}
+                  onClose={handleSidebarClose}
+                  IAERangeResponse={selectedIAERangeHistoryItem!}
+                />
+              </>
             )}
 
           </div>

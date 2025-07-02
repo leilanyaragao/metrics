@@ -65,7 +65,7 @@ const historyData = [
     convergence_point: true,
     essay_point: true,
     start_date: "2025-04-01T03:00:00",
-    end_date_time: "2025-06-17T03:00:00",
+    end_date: "2025-06-17T03:00:00",
     dynamic_weights: false,
     weight_tap: null,
     weight_taprog: null,
@@ -106,7 +106,7 @@ const historyData = [
     convergence_point: true,
     essay_point: true,
     start_date: "2025-03-15T20:07:00.069",
-    end_date_time: "2025-06-15T20:07:00.069",
+    end_date: "2025-06-15T20:07:00.069",
     dynamic_weights: true,
     weight_tap: null,
     weight_taprog: null,
@@ -147,7 +147,7 @@ const historyData = [
     convergence_point: true,
     essay_point: true,
     start_date: "2025-03-15T20:07:00.069",
-    end_date_time: "2025-06-15T20:07:00.069",
+    end_date: "2025-06-15T20:07:00.069",
     dynamic_weights: true,
     weight_tap: null,
     weight_taprog: null,
@@ -191,6 +191,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 
 const RangeSection = ({ iaeRangeResponse }: RangeSectionProps) => {
+  console.log(iaeRangeResponse)
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -563,8 +564,8 @@ const RangeSection = ({ iaeRangeResponse }: RangeSectionProps) => {
                     <div className="text-center">
                       <div className="text-lg font-bold text-brand-600 mb-1">
                         {selectedHistoryItem?.start_date &&
-                          selectedHistoryItem?.end_date_time
-                          ? `${new Date(selectedHistoryItem.start_date).toLocaleDateString("pt-BR")} - ${new Date(selectedHistoryItem.end_date_time).toLocaleDateString("pt-BR")}`
+                          selectedHistoryItem?.end_date
+                          ? `${new Date(selectedHistoryItem.start_date).toLocaleDateString("pt-BR")} - ${new Date(selectedHistoryItem.end_date).toLocaleDateString("pt-BR")}`
                           : "Não definido"}
                       </div>
                       <div className="text-sm text-slate-600">

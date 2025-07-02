@@ -36,8 +36,10 @@ import { useState } from "react";
     const handleNextPage = () => {
       setCurrentPage((prev) => Math.min(prev + 1, totalPages));
     };
+    console.log(historyData)
   
     return (
+  
       <Card className="shadow-lg border-0">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-slate-900">

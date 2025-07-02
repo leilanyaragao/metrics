@@ -34,7 +34,7 @@ export interface ICPLevel {
   color: string;
 }
 
-export interface HistoryItem {
+export interface ICPRange {
   map_id: string;
   journey_name: string;
   class_name: string;
@@ -95,7 +95,7 @@ export interface RangeHistoryItem {
   class_name: string;
   created_at: string;
   start_date: string;
-  end_date_time: string;
+  end_date: string;
   periodic_collection: boolean;
   points_indexes: any[];
   divergence_point: boolean;

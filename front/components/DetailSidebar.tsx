@@ -6,7 +6,7 @@ import { ICPChart } from "./ICPChart";
 import { ICPLegend } from "@/app/ICPLegend";
 import { SelectionPointsCard } from "@/app/SelectPointsCard";
 import { WeightsCard } from "@/app/WeightsCard";
-import { HistoryItem, Student } from "@/types/dashboard";
+import { ICPRange, Student } from "@/types/dashboard";
 import { cn } from "@/lib/utils";
 import { ChartDataPoint } from "@/types/chart-data"
 import { useChartDataStats } from "./useChartDataStats";
@@ -15,7 +15,7 @@ import { ICPRangeChart } from "./ICPRangeChart";
 
 
 interface DetailSidebarProps {
-  item: HistoryItem | null;
+  item: ICPRange | null;
   isOpen: boolean;
   onClose: () => void;
   chartDataPoints: ChartDataPoint[]
