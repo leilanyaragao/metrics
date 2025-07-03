@@ -46,15 +46,29 @@ import { cn } from "@/lib/utils";
         "bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200",
       )}
     >
-        <CardHeader>
+        <CardHeader className="text-center pb-6">
         <CardTitle className="flex items-center gap-2 text-base">
           <HistoryIcon className="w-4 h-4" />
           Histórico
         </CardTitle>
-          <CardDescription className="text-slate-600">
-            Clique em qualquer avaliação para visualizar o gráfico
-          </CardDescription>
-        </CardHeader>
+        <CardDescription className="text-slate-600">
+          Clique em qualquer avaliação para visualizar o gráfico
+        </CardDescription>
+        <div className="space-y-2">
+          <p className="text-slate-600 text-lg font-medium">
+            {currentItems.length === 0
+              ? "Nenhum histórico encontrado"
+              : `${currentItems.length} ${currentItems.length === 1 ? "histórico encontrado" : "históricos encontrados"}`}
+          </p>
+          {currentItems.length > itemsPerPage && (
+            <p className="text-sm text-slate-500">
+              Mostrando {startIndex + 1}-
+              {Math.min(endIndex, currentItems.length)} de {currentItems.length}
+              {totalPages > 1 && ` • Página ${currentPage} de ${totalPages}`}
+            </p>
+          )}
+        </div>
+      </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {currentItems.map((item) => (

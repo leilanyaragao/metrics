@@ -44,8 +44,7 @@ import IAERangeHistorySection from "@/components/IAERangeHistorySection"
 import IAERangeHistorySidebar from "@/components/IAERangeHistorySidebar"
 
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTE1MTQwMzQsImlhdCI6MTc1MTQ5OTYzNH0.svXHtcfiErMdxR3-pvJCcThnpxsT22lkvJXgKwZ1AhHABMUogB8GRfs0ArAtPu2QK1T5ewUMvHmxZ2Xq5kR3NQ"
-
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTE1ODE1MzIsImlhdCI6MTc1MTU2NzEzMn0.mZAbFTGvR4E1hd7qMU2eoVmF_1gfwDLI5kqOnDKDFdGtt-ohpGAA7U75bUs3VBSoFZ2Qwml2IF_zma43cMj2Eg"
 interface RangeDatesICP {
   map_id: string
   convergence_point: boolean
@@ -83,13 +82,6 @@ interface RangeDatesIAE {
   end_date: Date
 }
 
-interface DropoutData {
-  label: string,
-  iae: number
-  tap: number,
-  taProg: number
-
-}
 
 interface Points {
   avaliacao: boolean,
@@ -156,8 +148,13 @@ export default function MetricsDashboard() {
   const [IAERangeResponse, setIAERangeResponse] = useState<IAERange>()
   const [IAERangeHistoryResponse, setIAERangeHistoryResponse] = useState<IAERange[]>([])
 
-  const handleHistoryCardClick = (item: any) => {
+
+  const handleICPHistoryClick = (item: ICPRange) => {
     setSelectedICPRangeHistoryItem(item);
+    setIsSidebarOpen(true);
+  };
+  
+  const handleIAEHistoryClick = (item: IAERange) => {
     setSelectedIAERangeHistoryItem(item);
     setIsSidebarOpen(true);
   };
@@ -168,14 +165,6 @@ export default function MetricsDashboard() {
     setSelectedIAERangeHistoryItem(null);
   };
 
-  const transformDataForChart = (data: IAERange) => {
-    return data?.points_indexes?.map((point: points_indexes) => ({
-      label: point.label,
-      IAE: Math.round(point.iae * 100),
-      TAP: Math.round(point.tap * 100),
-      "TA-PROG": Math.round(point.ta_prog * 100),
-    }));
-  };
 
   // Simulate data loading
   useEffect(() => {
@@ -415,9 +404,9 @@ export default function MetricsDashboard() {
             setCurrentHistoryItem(newAnalysis)
             setSelectedStudents([])
           }).catch((error) => {
-          setShowResults(false);
-          alert("Erro");
-        })
+            setShowResults(false);
+            alert("Erro");
+          })
       }
 
       //Calcular IAE
@@ -580,7 +569,9 @@ export default function MetricsDashboard() {
                         setShowResults(false)
                         setSelectedStudents([])
                         setCurrentHistoryItem(null)
-                        setSelectedICPRangeHistoryItem(null); // <-- LINHA CRÍTICA: Limpe o estado do ICP
+                        setSelectedICPRangeHistoryItem(null); 
+  setSelectedIAERangeHistoryItem(null);
+  setIsSidebarOpen(false);
 
                       }}
                       className={`w-full font-medium pb-1 ${activeMetric === "IAE"
@@ -604,6 +595,7 @@ export default function MetricsDashboard() {
                 </div>
 
                 {/* Collection Type */}
+                {/* Collection Type */}
                 <div>
                   <Label className="text-sm font-medium">Tipo de Coleta</Label>
                   <div className="mt-2 space-y-2">
@@ -620,19 +612,23 @@ export default function MetricsDashboard() {
                         Range de Datas
                       </label>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="periodica"
-                        name="coleta"
-                        checked={collectionType === "periodica"}
-                        onChange={() => handleCollectionTypeChange(activeMetric, "periodica")}
-                        className="text-purple-600"
-                      />
-                      <label htmlFor="periodica" className="text-sm">
-                        Coleta Periódica
-                      </label>
-                    </div>
+
+                    {/* AQUI ESTÁ A MUDANÇA: SÓ RENDERIZA SE A MÉTRICA NÃO FOR IAE */}
+                    {activeMetric !== "IAE" && (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="periodica"
+                          name="coleta"
+                          checked={collectionType === "periodica"}
+                          onChange={() => handleCollectionTypeChange(activeMetric, "periodica")}
+                          className="text-purple-600"
+                        />
+                        <label htmlFor="periodica" className="text-sm">
+                          Coleta Periódica
+                        </label>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1243,19 +1239,11 @@ export default function MetricsDashboard() {
               <>
                 <HistoryCard
                   historyItems={ICPRangeHistoryResponse}
-                  onSelectItem={handleHistoryCardClick}
+                  onSelectItem={handleICPHistoryClick}
                   className="w-full"
                   isLoading={isLoading}
                 />
-                <footer className="bg-white border-t border-slate-200 mt-12">
-                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-slate-500">
-                        Dashboard de Análise de Participação
-                      </p>
-                    </div>
-                  </div>
-                </footer>
+
 
                 {/* Detail Sidebar */}
                 <DetailSidebar
@@ -1272,7 +1260,7 @@ export default function MetricsDashboard() {
               <>
                 <IAERangeHistorySection
                   historyData={IAERangeHistoryResponse}
-                  onHistoryCardClick={handleHistoryCardClick}
+                  onHistoryCardClick={handleIAEHistoryClick}
                 />
 
                 <IAERangeHistorySidebar
