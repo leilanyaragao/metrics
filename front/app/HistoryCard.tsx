@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Pagination,
@@ -154,12 +154,14 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
         className,
       )}
     >
-      
       <CardHeader className="text-center pb-6">
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <HistoryIcon className="w-4 h-4" />
-                        Comparação de ICP
-                      </CardTitle>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <HistoryIcon className="w-4 h-4" />
+          Histórico
+        </CardTitle>
+        <CardDescription className="text-slate-600">
+          Clique em qualquer avaliação para visualizar o gráfico
+        </CardDescription>
         <div className="space-y-2">
           <p className="text-slate-600 text-lg font-medium">
             {historyItems.length === 0
@@ -228,7 +230,7 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
                     {/* Header */}
                     <div className="mb-4">
                       <h3 className="font-semibold text-slate-800 text-lg leading-tight mb-2">
-                        {item.class_name}
+                        {item.map_name}
                       </h3>
                       <p className="text-sm text-slate-500 mb-1">
                         Criado em: {formatDate(item.created_at)}
@@ -377,12 +379,12 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
                         <>
                           {visiblePages[visiblePages.length - 1] <
                             totalPages - 1 && (
-                            <PaginationItem>
-                              <span className="flex h-9 w-9 items-center justify-center text-slate-400">
-                                ...
-                              </span>
-                            </PaginationItem>
-                          )}
+                              <PaginationItem>
+                                <span className="flex h-9 w-9 items-center justify-center text-slate-400">
+                                  ...
+                                </span>
+                              </PaginationItem>
+                            )}
                           <PaginationItem>
                             <PaginationLink
                               onClick={() => handlePageChange(totalPages)}
@@ -401,7 +403,7 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
                         className={cn(
                           "cursor-pointer",
                           currentPage === totalPages &&
-                            "pointer-events-none opacity-50",
+                          "pointer-events-none opacity-50",
                         )}
                       />
                     </PaginationItem>

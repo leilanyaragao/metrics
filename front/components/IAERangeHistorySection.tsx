@@ -6,20 +6,21 @@ import {
     CardTitle,
   } from "@/components/ui/card";
 import { IAERange } from "@/types/dashboard";
-  import { Calendar, MapPin, Route, ChevronRight, ChevronLeft } from "lucide-react";
+  import { Calendar, MapPin, Route, ChevronRight, ChevronLeft, HistoryIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
   
   
-  interface RangeHistorySectionProps {
+  interface IAERangeHistorySectionProps {
     historyData: IAERange[];
     onHistoryCardClick: (item: IAERange) => void;
   }
   
-  const RangeHistorySection = ({
+  const IAERangeHistorySection = ({
     historyData,
     onHistoryCardClick,
-  }: RangeHistorySectionProps) => {
+  }: IAERangeHistorySectionProps) => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 4;
   
@@ -40,11 +41,16 @@ import { useState } from "react";
   
     return (
   
-      <Card className="shadow-lg border-0">
+      <Card
+      className={cn(
+        "bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200",
+      )}
+    >
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-slate-900">
-            Histórico de Avaliações Range
-          </CardTitle>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <HistoryIcon className="w-4 h-4" />
+          Histórico
+        </CardTitle>
           <CardDescription className="text-slate-600">
             Clique em qualquer avaliação para visualizar o gráfico
           </CardDescription>
@@ -89,7 +95,7 @@ import { useState } from "react";
                           <span>Jornada</span>
                         </div>
                         <div className="text-sm font-medium text-slate-900 truncate">
-                          {item.class_name}
+                          {item.map_name}
                         </div>
                         <div className="text-xs text-slate-500 flex items-center gap-2">
                           <span>Mapa</span>
@@ -112,7 +118,7 @@ import { useState } from "react";
                   {/* Período */}
                   <div className="mb-4 p-3 bg-slate-50 rounded-lg">
                     <div className="text-xs font-medium text-slate-600 mb-1">
-                      Período de Coleta
+                      Período
                     </div>
                     <div className="text-sm text-slate-900">
                       {new Date(item.start_date).toLocaleDateString("pt-BR")} -{" "}
@@ -202,5 +208,5 @@ import { useState } from "react";
     );
   };
   
-  export default RangeHistorySection;
+  export default IAERangeHistorySection;
   

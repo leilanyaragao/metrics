@@ -1,14 +1,14 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {Class} from "@/types/dashboard"
+import { Class } from "@/types/dashboard"
 
 interface InformationsStatsProps {
-  selectedClassRangeICP: Class;
+  informations: Class;
 }
 
 export const Informations: React.FC<InformationsStatsProps> = ({
-  selectedClassRangeICP
+  informations: informations
 }) => {
   return (
     <div className={`grid grid-cols-1`}>
@@ -39,7 +39,7 @@ export const Informations: React.FC<InformationsStatsProps> = ({
               Jornada:
             </span>
             <Badge variant="outline" className="font-medium">
-              {selectedClassRangeICP.journey_name}
+              {informations.journey_name}
             </Badge>
           </div>
 
@@ -48,7 +48,7 @@ export const Informations: React.FC<InformationsStatsProps> = ({
               Mapa:
             </span>
             <Badge variant="outline" className="font-medium">
-              {selectedClassRangeICP.class_name}
+              {informations.map_Name}
             </Badge>
           </div>
 

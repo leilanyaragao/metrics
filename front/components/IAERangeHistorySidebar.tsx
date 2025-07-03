@@ -24,9 +24,9 @@ import {
     CustomLegendContent,
 } from "@/components/ChartShapes";
 import { IAERange } from "@/types/dashboard";
-import RangeSection from "./IAERangeSection";
+import IAERangeSection from "./IAERangeSection";
 
-interface RangeSidebarProps {
+interface IAERangeHistorySidebarProps {
     isOpen: boolean;
     selectedHistoryItem: any;
     onClose: () => void;
@@ -49,12 +49,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-const RangeSidebar = ({
+const IAERangeHistorySidebar = ({
     isOpen,
     selectedHistoryItem,
     onClose,
     IAERangeResponse
-}: RangeSidebarProps) => {
+}: IAERangeHistorySidebarProps) => {
     if (!isOpen) return null;
     console.log(IAERangeResponse)
     return (
@@ -80,7 +80,7 @@ const RangeSidebar = ({
                     </Button>
                 </div>
 
-                <RangeSection
+                <IAERangeSection
                     iaeRangeResponse={IAERangeResponse!}
                 />
             </div>
@@ -88,4 +88,4 @@ const RangeSidebar = ({
     );
 };
 
-export default RangeSidebar;
+export default IAERangeHistorySidebar;

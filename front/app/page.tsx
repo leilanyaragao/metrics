@@ -39,13 +39,12 @@ import { ICPLegend } from "./ICPLegend";
 import { ICPRange } from "@/types/dashboard";
 import { Informations } from "@/components/Informations"
 import { DetailSidebar } from "@/components/DetailSidebar"
-import RangeSection from "@/components/IAERangeSection"
-import RangeHistorySection from "@/components/RangeHistorySection"
-import RangeSidebar from "@/components/RangeIAESidebar"
+import IAERangeSection from "@/components/IAERangeSection"
+import IAERangeHistorySection from "@/components/IAERangeHistorySection"
+import IAERangeHistorySidebar from "@/components/IAERangeHistorySidebar"
 
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTE0MzU4MzgsImlhdCI6MTc1MTQyMTQzOH0.3wYhsN9SFSpOJbVLD7U25oM_-qcfmilFjYVgcr7XrLDpv8oDXOd3bGVYm-_RthR-U5Pr0veanZ_B_BH1mVqhUw"
-
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTE1MTQwMzQsImlhdCI6MTc1MTQ5OTYzNH0.svXHtcfiErMdxR3-pvJCcThnpxsT22lkvJXgKwZ1AhHABMUogB8GRfs0ArAtPu2QK1T5ewUMvHmxZ2Xq5kR3NQ"
 
 interface RangeDatesICP {
   map_id: string
@@ -153,9 +152,7 @@ export default function MetricsDashboard() {
   const [isLoading, setIsLoading] = useState(false);
 
 
-
   //IAE range Data
-  const [chartData, setchartData] = useState<DropoutData[]>([])
   const [IAERangeResponse, setIAERangeResponse] = useState<IAERange>()
   const [IAERangeHistoryResponse, setIAERangeHistoryResponse] = useState<IAERange[]>([])
 
@@ -180,14 +177,6 @@ export default function MetricsDashboard() {
     }));
   };
 
-  const currentChartDataIAERangeHistory = transformDataForChart(IAERangeResponse!);
-
-
-  const selectedChartData = selectedIAERangeHistoryItem
-    ? transformDataForChart(selectedIAERangeHistoryItem)
-    : currentChartDataIAERangeHistory;
-
-
   // Simulate data loading
   useEffect(() => {
     setIsLoading(true);
@@ -198,38 +187,6 @@ export default function MetricsDashboard() {
 
     return () => clearTimeout(timer);
   }, []);
-
-
-  type DropoutDataPoint = {
-    label: string
-    iae: number // IAE
-    tap: number   // TAP
-    taProg: number // TAProg
-  }
-  const pointCount = chartData.length
-  const totalWidth = 400
-  const paddingLeft = 0
-  const paddingRight = 0
-  const chartWidth = totalWidth - paddingLeft - paddingRight
-  const gap = chartWidth / (pointCount - 1)
-  //teste
-  const getYPos = (value: number) => {
-    const min = 0
-    const max = 100
-    const chartHeight = 200
-    const padding = 10 // margem para os pontos não fugirem
-    const range = max - min
-
-    return padding + (chartHeight - 2 * padding) * (1 - (value - min) / range)
-  }
-  const xPositions = Array.from({ length: pointCount }, (_, i) => paddingLeft + i * gap)
-  ''
-  // Mapas dos dados
-  const iaeData = chartData.map((d) => d.iae)
-  const tapData = chartData.map((d) => d.tap)
-  const taprogData = chartData.map((d) => d.taProg)
-  const xLabels = chartData.map((d) => d.label)
-
 
 
   // Only store history for range de datas
@@ -313,13 +270,14 @@ export default function MetricsDashboard() {
   const [endTime, setEndTime] = useState("")
 
   function ConcatDateAndTime(date: Date, time: string): Date {
-    const [horas, minutos] = time.split(":").map(Number);
-  
-    const novaData = new Date(date);
-    novaData.setHours(horas, minutos, 0, 0); 
-  
-    return novaData;
+    const [hours, minutes] = time.split(":").map(Number);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+
+    return new Date(year, month, day, hours, minutes, 0, 0);
   }
+
 
   // Reset configuration when changing collection type
   const handleCollectionTypeChange = async (metric: "ICP" | "IAE", newType: "range" | "periodica") => {
@@ -352,14 +310,14 @@ export default function MetricsDashboard() {
       if (metric == "ICP") {
         response = await axios.get("http://localhost:8095/v1/metrics/icp/range/history",
           { headers: { Authorization: `Bearer ${acessToken}` } })
-          console.log("icp")
+        console.log("icp")
         setICPRangeHistoryResponse(response.data)
 
       }
       else {
         response = await axios.get("http://localhost:8095/v1/metrics/iae/range/history",
           { headers: { Authorization: `Bearer ${acessToken}` } })
-          console.log("iae")
+        console.log("iae")
 
       }
       setIAERangeHistoryResponse(response.data)
@@ -386,32 +344,6 @@ export default function MetricsDashboard() {
     setCurrentHistoryItem(null)
   }
 
-  //Formatação
-
-  const formatarDataHora = (dataTexto: string): string => {
-    const data = new Date(dataTexto);
-    return data.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const formatarPeriodoBr = (periodoTexto: string): string => {
-    const [inicioStr, fimStr] = periodoTexto.split(' - ');
-    const inicio = new Date(inicioStr);
-    const fim = new Date(fimStr);
-
-    const formatador = new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-
-    return `${formatador.format(inicio)} a ${formatador.format(fim)}`;
-  };
 
   const handleCalculate = () => {
     if (selectedJourney && selectedMap && startDate && endDate) {
@@ -453,7 +385,7 @@ export default function MetricsDashboard() {
 
             setSelectedClassRangeICP({
               journey_name: response.data.journey_name,
-              class_name: response.data.class_name
+              map_Name: response.data.map_name
             })
 
             const students = response.data.participation_consistency_per_users.map((value: any) => ({
@@ -482,11 +414,10 @@ export default function MetricsDashboard() {
             setAnalysisHistory([newAnalysis, ...analysisHistory])
             setCurrentHistoryItem(newAnalysis)
             setSelectedStudents([])
-          })
-          .catch(error => {
-            setShowResults(false)
-            console.error("Erro ao buscar dados do ICP:", error)
-          })
+          }).catch((error) => {
+          setShowResults(false);
+          alert("Erro");
+        })
       }
 
       //Calcular IAE
@@ -515,7 +446,7 @@ export default function MetricsDashboard() {
             const responseIAE: IAERange = {
               map_id: response.data.map_id,
               journey_name: response.data.journey_name,
-              class_name: response.data.class_name,
+              map_name: response.data.map_name,
               periodic_collection: response.data.periodic_collection,
               points_indexes: response.data.points_indexes,
               periodic_iaeid: response.data.periodic_iaeid,
@@ -538,7 +469,10 @@ export default function MetricsDashboard() {
               ancestors: response.data.ancestors,
             }
             setIAERangeResponse(responseIAE)
-          })
+          }).catch((error) => {
+            setShowResults(false);
+            alert("Erro");
+          });
       }
 
       else if (activeMetric === "ICP" && collectionType === "periodica") {
@@ -554,7 +488,7 @@ export default function MetricsDashboard() {
             dynamic_weights: dynamicWeights,
             weight_gap: icpWeights.pesoGAP[0],
             weight_rpp: icpWeights.pesoRPP[0],
-            start_date: ConcatDateAndTime(startDate, startTime) ,
+            start_date: ConcatDateAndTime(startDate, startTime),
             end_date: ConcatDateAndTime(endDate, endTime),
             periodicity: periodicidade
           }
@@ -597,26 +531,6 @@ export default function MetricsDashboard() {
 
   const canCalculate = selectedJourney && selectedMap && startDate && (collectionType === "range" ? endDate : startTime)
 
-  // Get time labels based on periodicidade
-  const getTimeLabels = () => {
-    switch (periodicidade) {
-      case "Anual":
-        return ["2021", "2022", "2023", "2024"]
-      case "Semestral":
-        return ["1º Sem", "2º Sem", "3º Sem", "4º Sem"]
-      case "Trimestral":
-        return ["1º Tri", "2º Tri", "3º Tri", "4º Tri"]
-      case "Mensal":
-        return ["Jan", "Fev", "Mar", "Abr"]
-      case "Semanal":
-        return ["Sem 1", "Sem 2", "Sem 3", "Sem 4"]
-      case "Diário":
-        return ["Dia 1", "Dia 2", "Dia 3", "Dia 4"]
-      default:
-        return ["T1", "T2", "T3", "T4"]
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto">
@@ -643,7 +557,7 @@ export default function MetricsDashboard() {
                     <button
                       onClick={() => {
                         setActiveMetric("ICP")
-                        handleCollectionTypeChange("ICP","range")
+                        handleCollectionTypeChange("ICP", "range")
                         setShowResults(false)
                         setSelectedStudents([])
                         setCurrentHistoryItem(null)
@@ -662,7 +576,7 @@ export default function MetricsDashboard() {
                     <button
                       onClick={() => {
                         setActiveMetric("IAE")
-                        handleCollectionTypeChange("IAE","range")
+                        handleCollectionTypeChange("IAE", "range")
                         setShowResults(false)
                         setSelectedStudents([])
                         setCurrentHistoryItem(null)
@@ -1156,138 +1070,154 @@ export default function MetricsDashboard() {
 
                 {/* Results Header */}
                 {activeMetric === "ICP" && collectionType === "periodica" && <Index chartDataPoints={chartDataPoints} setShowResults={setShowResults} />}
-                <Informations selectedClassRangeICP={selectedClassRangeICP} />
 
                 {activeMetric === "ICP" && collectionType === "range" && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Users className="w-4 h-4" />
-                        Selecionar Alunos para Comparação
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="text-sm font-medium">Adicionar Aluno</Label>
-                          <Select
-                            onValueChange={(value) => {
-                              const student = availableStudents.find((s) => s.id === value)
-                              if (student) addStudent(student)
-                            }}
-                          >
-                            <SelectTrigger className="mt-2">
-                              <SelectValue placeholder="Selecione um aluno" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableStudents
-                                .filter((student) => !selectedStudents.find((s) => s.id === student.id))
-                                .map((student) => (
-                                  <SelectItem key={student.id} value={student.id}>
-                                    {student.name}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                  <>
+                    {/* Bloco de Informações da Turma */}
+                    <Informations informations={selectedClassRangeICP} />
 
-                        {selectedStudents.length > 0 && (
+                    {/* Card para Seleção de Alunos */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Users className="h-4 w-4" />
+                          Selecionar Alunos para Comparação
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
                           <div>
-                            <Label className="text-sm font-medium">Alunos Selecionados</Label>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {selectedStudents.map((student) => (
-                                <Badge
-                                  key={student.id}
-                                  variant="secondary"
-                                  className="px-3 py-1 flex items-center gap-2"
-                                >
-                                  {student.name}
-                                  <button onClick={() => removeStudent(student.id)}>
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </Badge>
-                              ))}
-                            </div>
+                            <Label className="text-sm font-medium">Adicionar Aluno</Label>
+                            <Select
+                              onValueChange={(value) => {
+                                const student = availableStudents.find((s) => s.id === value);
+                                if (student) addStudent(student);
+                              }}
+                            >
+                              <SelectTrigger className="mt-2">
+                                <SelectValue placeholder="Selecione um aluno" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableStudents
+                                  .filter((student) => !selectedStudents.some((s) => s.id === student.id))
+                                  .map((student) => (
+                                    <SelectItem key={student.id} value={student.id}>
+                                      {student.name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
 
-                {/* ICP Comparison (only for range de datas) */}
-                {activeMetric === "ICP" && collectionType === "range" && (
-                  <><Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <TrendingUp className="w-4 h-4" />
-                        Comparação de ICP
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium">Turma</span>
-                          <span className="text-sm font-bold">{currentHistoryItem?.result}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div className="h-3 rounded-full bg-purple-500" style={{ width: `${currentHistoryItem?.result}%` }} />
-                        </div>
-                      </div>
-
-                      {selectedStudents.map((student) => (
-                        <div key={student.id} className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">{student.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold">{student.averageICP}%</span>
-                              <span
-                                className={`text-xs ${student.averageICP! > currentHistoryItem?.result! ? "text-green-600" : "text-red-600"}`}
-                              >
-                                ({student.averageICP! > currentHistoryItem?.result! ? "+" : ""}
-                                {(student.averageICP! - currentHistoryItem?.result!).toFixed(2)}%)
-                              </span>
+                          {selectedStudents.length > 0 && (
+                            <div>
+                              <Label className="text-sm font-medium">Alunos Selecionados</Label>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {selectedStudents.map((student) => (
+                                  <Badge
+                                    key={student.id}
+                                    variant="secondary"
+                                    className="flex items-center gap-2 px-3 py-1"
+                                  >
+                                    {student.name}
+                                    <button onClick={() => removeStudent(student.id)}>
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Card para Comparação de ICP */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <TrendingUp className="h-4 w-4" />
+                          Comparação de ICP
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6"> {/* Aumentado o espaçamento para melhor visualização */}
+                        {/* Comparativo da Turma */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Turma</span>
+                            <span className="text-sm font-bold">{currentHistoryItem?.result}%</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div className="h-3 w-full rounded-full bg-gray-200">
                             <div
-                              className={`h-3 rounded-full ${student.averageICP! > currentHistoryItem?.result! ? "bg-green-500" : "bg-red-500"}`}
-                              style={{ width: `${student.averageICP}%` }} />
+                              className="h-3 rounded-full bg-purple-500"
+                              style={{ width: `${currentHistoryItem?.result}%` }}
+                            />
                           </div>
                         </div>
-                      ))}
 
-                      {/* Selection Points */}
-                      <div>
-                        <h4 className="text-lg font-semibold text-slate-800 mb-4">
-                          Pontos Selecionados
-                        </h4>
-                        <SelectionPointsCard
-                          debate={selectedPointsRangeICP.debate}
-                          avaliacao={selectedPointsRangeICP.avaliacao}
-                          decisao={selectedPointsRangeICP.decisao}
+                        {/* Comparativo por Aluno */}
+                        {selectedStudents.map((student) => {
+                          const studentICP = student.averageICP ?? 0;
+                          const classResult = currentHistoryItem?.result ?? 0;
+                          const isAbove = studentICP > classResult;
+                          const difference = (studentICP - classResult).toFixed(2);
+
+                          return (
+                            <div key={student.id} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">{student.name}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-bold">{studentICP}%</span>
+                                  <span className={`text-xs ${isAbove ? "text-green-600" : "text-red-600"}`}>
+                                    ({isAbove ? "+" : ""}{difference}%)
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="h-3 w-full rounded-full bg-gray-200">
+                                <div
+                                  className={`h-3 rounded-full ${isAbove ? "bg-green-500" : "bg-red-500"}`}
+                                  style={{ width: `${studentICP}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* Pontos Selecionados */}
+                        <div>
+                          <h4 className="mb-4 text-lg font-semibold text-slate-800">
+                            Pontos Selecionados
+                          </h4>
+                          <SelectionPointsCard
+                            debate={selectedPointsRangeICP.debate}
+                            avaliacao={selectedPointsRangeICP.avaliacao}
+                            decisao={selectedPointsRangeICP.decisao}
+                          />
+                        </div>
+
+                        {/* Pesos */}
+                        <WeightsCard
+                          dynamicWeights={selectedWeightsRangeICP.dynamic_weights}
+                          weightX={selectedWeightsRangeICP.weight_x}
+                          weightY={selectedWeightsRangeICP.weight_y}
+                          weightXName="Peso do GAP"
+                          weightXDescription="Mede a regularidade das participações, penalizando alunos que interagem de forma intercalada."
+                          weightXAbbreviation="GAP"
+                          weightYName="Peso do RPP"
+                          weightYDescription="Mede a continuidade das participações, penalizando ausências prolongadas ao longo do tempo."
+                          weightYAbbreviation="RPP"
                         />
-                      </div>
+                      </CardContent>
+                    </Card>
 
-                      <WeightsCard
-                        dynamicWeights={selectedWeightsRangeICP.dynamic_weights}
-                        weightX={selectedWeightsRangeICP.weight_x}
-                        weightY={selectedWeightsRangeICP.weight_y}
-                        weightXName="Peso do GAP"
-                        weightXDescription="Mede a regularidade das participações, penalizando alunos que interagem de forma intercalada."
-                        weightXAbbreviation="GAP"
-                        weightYName="Peso do RPP"
-                        weightYDescription="Mede a continuidade das participações, penalizando ausências prolongadas ao longo do tempo."
-                        weightYAbbreviation="RPP"
-                      />
-
-                    </CardContent>
-                  </Card><ICPLegend /></>
+                    {/* Legenda do ICP */}
+                    <ICPLegend />
+                  </>
                 )}
 
                 {/* IAE Line Chart */}
                 {activeMetric === "IAE" && collectionType === "range" && (
-                  <RangeSection
+                  <IAERangeSection
                     iaeRangeResponse={IAERangeResponse!}
                   />
 
@@ -1308,27 +1238,21 @@ export default function MetricsDashboard() {
               </>
             )}
 
-            {/* Analysis History - Only for Range de Datas */}
+            {/* Analysis History - ICP */}
             {collectionType === "range" && activeMetric == "ICP" && (
               <>
-
                 <HistoryCard
                   historyItems={ICPRangeHistoryResponse}
                   onSelectItem={handleHistoryCardClick}
                   className="w-full"
                   isLoading={isLoading}
                 />
-
-
                 <footer className="bg-white border-t border-slate-200 mt-12">
                   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-slate-500">
-                        Dashboard de Análise de Participação - Versão{" "}
+                        Dashboard de Análise de Participação
                       </p>
-
-
-
                     </div>
                   </div>
                 </footer>
@@ -1339,19 +1263,19 @@ export default function MetricsDashboard() {
                   isOpen={isSidebarOpen}
                   onClose={handleSidebarClose}
                   chartDataPoints={chartDataPoints}
-
                 />
               </>
 
             )}
+            {/* Analysis History - IAE */}
             {collectionType === "range" && activeMetric == "IAE" && (
               <>
-                <RangeHistorySection
+                <IAERangeHistorySection
                   historyData={IAERangeHistoryResponse}
                   onHistoryCardClick={handleHistoryCardClick}
                 />
 
-                <RangeSidebar
+                <IAERangeHistorySidebar
                   isOpen={isSidebarOpen}
                   selectedHistoryItem={selectedIAERangeHistoryItem}
                   onClose={handleSidebarClose}

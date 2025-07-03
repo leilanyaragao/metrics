@@ -101,7 +101,7 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
             </div>
             <div>
               <h3 className="font-medium text-purple-100">Mapa:</h3>
-              <p className="text-lg">{item.class_name}</p>
+              <p className="text-lg">{item.map_name}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

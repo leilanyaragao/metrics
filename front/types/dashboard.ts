@@ -8,7 +8,7 @@ export interface UserParticipation {
 
 export interface DashboardData {
   map_id: string;
-  class_name: string;
+  map_name: string;
   periodic_collection: boolean;
   class_average_gap: number;
   class_average_rpp: number;
@@ -37,7 +37,7 @@ export interface ICPLevel {
 export interface ICPRange {
   map_id: string;
   journey_name: string;
-  class_name: string;
+  map_name: string;
   periodic_collection: boolean;
   class_average_gap: number;
   class_average_rpp: number;
@@ -63,7 +63,7 @@ export interface ICPRange {
 
 export interface Class {
   journey_name: string,
-  class_name: string,
+  map_Name: string,
 }
 
 export interface Student {
@@ -92,7 +92,7 @@ export interface RangeHistoryItem {
   id: string;
   map_id: string;
   journey_name: string;
-  class_name: string;
+  map_name: string;
   created_at: string;
   start_date: string;
   end_date: string;
@@ -109,7 +109,7 @@ export interface RangeHistoryItem {
 export interface IAERange {
   map_id: string,
   journey_name: string,
-  class_name: string,
+  map_name: string,
   periodic_collection: boolean,
   points_indexes: points_indexes[],
   periodic_iaeid: string,

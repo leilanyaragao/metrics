@@ -18,7 +18,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import RangeHistorySection from "@/components/RangeHistorySection";
+import IAERangeHistorySection from "@/components/IAERangeHistorySection";
 import {
   CircleDot,
   TriangleDot,
@@ -28,10 +28,10 @@ import {
 import { WeightsCard } from "@/app/WeightsCard";
 import RangeMetricsCards from "./RangeMetricsCard";
 import { SelectionPointsCard } from "@/app/SelectPointsCard";
+import { Class, IAERange, IAERangeHistory, points_indexes } from "@/types/dashboard";
 import { Informations } from "./Informations";
-import { IAERange, IAERangeHistory, points_indexes } from "@/types/dashboard";
 
-interface RangeSectionProps {
+interface IAERangeSectionProps {
   iaeRangeResponse: IAERange,
 }
 
@@ -190,7 +190,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 
 
-const RangeSection = ({ iaeRangeResponse }: RangeSectionProps) => {
+const IAERangeSection = ({ iaeRangeResponse }: IAERangeSectionProps) => {
   console.log(iaeRangeResponse)
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -211,9 +211,14 @@ const RangeSection = ({ iaeRangeResponse }: RangeSectionProps) => {
     ? transformDataForChart(selectedHistoryItem)
     : currentChartData;
 
+  const myClass: Class = {
+      journey_name: iaeRangeResponse?.journey_name,
+      map_Name: iaeRangeResponse?.map_name,
+    };
 
   return (
     <>
+    <Informations informations={myClass} />
       {/* Current Chart Section */}
       <Card className="mb-8 shadow-lg border-0">
         <CardHeader className="pb-4">
@@ -583,4 +588,4 @@ const RangeSection = ({ iaeRangeResponse }: RangeSectionProps) => {
   );
 };
 
-export default RangeSection;
+export default IAERangeSection;

@@ -64,7 +64,7 @@ export const HistoricalCollections = ({ collections, onOpenHistoryItem }: Props)
   
                   <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                     <Layers className="h-3 w-3" />
-                    <span>Turma: <strong>{collection.class_name}</strong></span>
+                    <span>Turma: <strong>{collection.map_name}</strong></span>
                   </div>
   
                   <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
