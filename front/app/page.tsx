@@ -44,7 +44,7 @@ import IAERangeHistorySection from "@/components/IAERangeHistorySection"
 import IAERangeHistorySidebar from "@/components/IAERangeHistorySidebar"
 
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTE1ODE1MzIsImlhdCI6MTc1MTU2NzEzMn0.mZAbFTGvR4E1hd7qMU2eoVmF_1gfwDLI5kqOnDKDFdGtt-ohpGAA7U75bUs3VBSoFZ2Qwml2IF_zma43cMj2Eg"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTE2MDY0OTQsImlhdCI6MTc1MTU5MjA5NH0.xXPFEsy7jDrBowop-kg_-Qg9uTc_2RWy_YSfV8R7KyfDG-o5XT6uEb8gdquHd6x_CKsnp9qNww6BEVq5dvB7wA"
 interface RangeDatesICP {
   map_id: string
   convergence_point: boolean
@@ -65,8 +65,8 @@ interface PeriodicICP {
   dynamic_weights: boolean
   weight_gap: number
   weight_rpp: number
-  start_date: Date
-  end_date: Date
+  start_date: string
+  end_date: string
   periodicity: string
 }
 
@@ -153,7 +153,7 @@ export default function MetricsDashboard() {
     setSelectedICPRangeHistoryItem(item);
     setIsSidebarOpen(true);
   };
-  
+
   const handleIAEHistoryClick = (item: IAERange) => {
     setSelectedIAERangeHistoryItem(item);
     setIsSidebarOpen(true);
@@ -258,14 +258,19 @@ export default function MetricsDashboard() {
   const [startTime, setStartTime] = useState("")
   const [endTime, setEndTime] = useState("")
 
-  function ConcatDateAndTime(date: Date, time: string): Date {
+  function ConcatDateAndTime(date: Date, time: string): string {
     const [hours, minutes] = time.split(":").map(Number);
     const year = date.getFullYear();
     const month = date.getMonth();
     const day = date.getDate();
 
-    return new Date(year, month, day, hours, minutes, 0, 0);
+    const dateFinal = new Date(year, month, day, hours, minutes, 0, 0);
+
+    dateFinal.setTime(dateFinal.getTime() - dateFinal.getTimezoneOffset() * 60 * 1000);
+
+    return dateFinal.toISOString().split(".")[0]
   }
+
 
 
   // Reset configuration when changing collection type
@@ -297,19 +302,30 @@ export default function MetricsDashboard() {
       clearConfig(newType)
 
       if (metric == "ICP") {
+        try{
         response = await axios.get("http://localhost:8095/v1/metrics/icp/range/history",
           { headers: { Authorization: `Bearer ${acessToken}` } })
         console.log("icp")
         setICPRangeHistoryResponse(response.data)
+        }
+        catch(error){
+          setICPRangeHistoryResponse([])
+        }
 
       }
       else {
-        response = await axios.get("http://localhost:8095/v1/metrics/iae/range/history",
-          { headers: { Authorization: `Bearer ${acessToken}` } })
-        console.log("iae")
-
+        try{
+          response = await axios.get("http://localhost:8095/v1/metrics/iae/range/history",
+            { headers: { Authorization: `Bearer ${acessToken}` } })
+          console.log("iae")
+          setIAERangeHistoryResponse(response.data)
+        }
+        catch(error){
+          setIAERangeHistoryResponse([])
+        }
+        
+        
       }
-      setIAERangeHistoryResponse(response.data)
     }
 
   }
@@ -550,8 +566,7 @@ export default function MetricsDashboard() {
                         setShowResults(false)
                         setSelectedStudents([])
                         setCurrentHistoryItem(null)
-                        setSelectedIAERangeHistoryItem(null); // <-- LINHA CRÍTICA: Limpe o estado do IAE
-
+                        setSelectedIAERangeHistoryItem(null);
                       }}
                       className={`w-full font-medium pb-1 ${activeMetric === "ICP"
                         ? "text-purple-600 border-b-2 border-purple-600"
@@ -569,9 +584,8 @@ export default function MetricsDashboard() {
                         setShowResults(false)
                         setSelectedStudents([])
                         setCurrentHistoryItem(null)
-                        setSelectedICPRangeHistoryItem(null); 
-  setSelectedIAERangeHistoryItem(null);
-  setIsSidebarOpen(false);
+                        setSelectedICPRangeHistoryItem(null);
+
 
                       }}
                       className={`w-full font-medium pb-1 ${activeMetric === "IAE"

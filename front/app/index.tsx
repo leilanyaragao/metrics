@@ -62,8 +62,7 @@ interface Props {
   setShowResults:  Dispatch<SetStateAction<boolean>>
 }
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTE1ODE1MzIsImlhdCI6MTc1MTU2NzEzMn0.mZAbFTGvR4E1hd7qMU2eoVmF_1gfwDLI5kqOnDKDFdGtt-ohpGAA7U75bUs3VBSoFZ2Qwml2IF_zma43cMj2Eg"
-
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTE2MDY0OTQsImlhdCI6MTc1MTU5MjA5NH0.xXPFEsy7jDrBowop-kg_-Qg9uTc_2RWy_YSfV8R7KyfDG-o5XT6uEb8gdquHd6x_CKsnp9qNww6BEVq5dvB7wA"
 export default function Index({ chartDataPoints, setShowResults }: Props) {
   const [selectedStudents, setSelectedStudents] = useState<Student[]>(
     [],
