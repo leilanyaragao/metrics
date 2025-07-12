@@ -13,6 +13,9 @@ export interface ChartDataPoint {
   class_average_gap: number;
   class_average_rpp: number;
   class_average_icp: number;
+  convergence_point: boolean;
+  divergence_point: boolean;
+  essay_point: boolean;
   participation_consistency_per_users: User[];
   periodic_icpid: string;
   user_id: string;
@@ -25,6 +28,13 @@ export interface ChartDataPoint {
   updated_by: string;
   ancestors: any[];
   end_date: string;
+  weight_gap: number;
+  weight_rpp: number;
+}
+
+
+export interface HistoricalResponse {
+  [periodicIcpId: string]: ChartDataPoint[];
 }
 
 export interface ProcessedChartData {

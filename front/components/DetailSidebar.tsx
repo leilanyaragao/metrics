@@ -162,9 +162,6 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
 
           {/* Selection Points */}
           <div>
-            <h4 className="text-lg font-semibold text-slate-800 mb-4">
-              Pontos Selecionados
-            </h4>
             <SelectionPointsCard
               debate={item.divergence_point}
               avaliacao={item.essay_point}
@@ -174,9 +171,6 @@ export const DetailSidebar: React.FC<DetailSidebarProps> = ({
 
           {/* Weights Configuration */}
           <div>
-            <h4 className="text-lg font-semibold text-slate-800 mb-4">
-              Configuração de Pesos
-            </h4>
             <WeightsCard
               dynamicWeights={false}
               weightX={item.weight_gap}

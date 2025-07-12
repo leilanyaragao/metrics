@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useEffect, useState } from "react"
+import { use, useCallback, useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,11 +18,11 @@ import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import Index from "."
+import ICPPEriodic from "./ICPPeriodic"
 import { SelectionPointsCard } from "./SelectPointsCard"
 import { HistoryCard } from "./HistoryCard"
 import { WeightsCard } from "./WeightsCard"
-import { ChartDataPoint } from "@/types/chart-data"
+import { ChartDataPoint, HistoricalResponse, ProcessedHistoricalCollection } from "@/types/chart-data"
 import { AnalysisHistory, Class, IAERange, IAERangeHistory, points_indexes, Student } from "@/types/dashboard"
 import {
   AlertDialog,
@@ -42,9 +42,11 @@ import { DetailSidebar } from "@/components/DetailSidebar"
 import IAERangeSection from "@/components/IAERangeSection"
 import IAERangeHistorySection from "@/components/IAERangeHistorySection"
 import IAERangeHistorySidebar from "@/components/IAERangeHistorySidebar"
+import { HistoricalCollectionsPanel } from "@/components/ICPPeriodicHistory"
 
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTE2MDY0OTQsImlhdCI6MTc1MTU5MjA5NH0.xXPFEsy7jDrBowop-kg_-Qg9uTc_2RWy_YSfV8R7KyfDG-o5XT6uEb8gdquHd6x_CKsnp9qNww6BEVq5dvB7wA"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJlbWFpbF92YWxpZGF0ZWQiOnRydWUsInJvbGVzIjpbXSwibmFtZSI6IkxlaWxhbnkgVWxpc3NlcyIsImV4cCI6MTc1MjM2ODY4NCwiaWF0IjoxNzUyMzU0Mjg0fQ.arfEYP4jM4C64o9W7DoZUZuntiwZX4qYtsAro8fEczJVrrGggGdiNXaH8iPRXd-cUwPIv_AKH5g9wVhdIm75NQ"
+
 interface RangeDatesICP {
   map_id: string
   convergence_point: boolean
@@ -139,6 +141,13 @@ export default function MetricsDashboard() {
   const [ICPRangeHistoryResponse, setICPRangeHistoryResponse] = useState<ICPRange[]>([]);
   const [selectedICPRangeHistoryItem, setSelectedICPRangeHistoryItem] = useState<ICPRange | null>(null);
   const [selectedIAERangeHistoryItem, setSelectedIAERangeHistoryItem] = useState<IAERange | null>(null);
+  const [processHistoricalCollections, setProcessHistoricalCollections] = useState<ProcessedHistoricalCollection>();
+
+  const [historicalCollections, setHistoricalCollections] = useState<HistoricalResponse>({});
+
+
+
+
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -277,16 +286,20 @@ export default function MetricsDashboard() {
   const handleCollectionTypeChange = async (metric: "ICP" | "IAE", newType: "range" | "periodica") => {
     let response
 
-    if (newType === "periodica") {
+    if (newType === "periodica" && metric == "ICP") {
       setCollectionType(newType)
-      if (metric == "ICP") {
-        response = await axios.get("http://localhost:8095/v1/metrics/icp/periodic/in-progress",
-          { headers: { Authorization: `Bearer ${acessToken}` } })
-      }
-      else {
-        response = await axios.post("http://localhost:8095/v1/metrics/iae/periodic/in-progress",
-          { headers: { Authorization: `Bearer ${acessToken}` } })
-      }
+
+      //Ve se tem algum existente
+      response = await axios.get("http://localhost:8095/v1/metrics/icp/periodic/in-progress",
+        { headers: { Authorization: `Bearer ${acessToken}` } })
+      
+      //Pegar historico ICP Periodico
+        const historyResponse = await axios.get(
+        "http://localhost:8095/v1/metrics/icp/periodic/history",
+        { headers: { Authorization: `Bearer ${acessToken}` } }
+      );
+      setHistoricalCollections(historyResponse.data);
+
 
       if (response.data.length !== 0) {
         setShowResults(true)
@@ -302,29 +315,27 @@ export default function MetricsDashboard() {
       clearConfig(newType)
 
       if (metric == "ICP") {
-        try{
-        response = await axios.get("http://localhost:8095/v1/metrics/icp/range/history",
-          { headers: { Authorization: `Bearer ${acessToken}` } })
-        console.log("icp")
-        setICPRangeHistoryResponse(response.data)
+        try {
+          response = await axios.get("http://localhost:8095/v1/metrics/icp/range/history",
+            { headers: { Authorization: `Bearer ${acessToken}` } })
+          console.log("icp")
+          setICPRangeHistoryResponse(response.data)
         }
-        catch(error){
+        catch (error) {
           setICPRangeHistoryResponse([])
         }
 
       }
       else {
-        try{
+        try {
           response = await axios.get("http://localhost:8095/v1/metrics/iae/range/history",
             { headers: { Authorization: `Bearer ${acessToken}` } })
           console.log("iae")
           setIAERangeHistoryResponse(response.data)
         }
-        catch(error){
+        catch (error) {
           setIAERangeHistoryResponse([])
         }
-        
-        
       }
     }
 
@@ -1079,7 +1090,7 @@ export default function MetricsDashboard() {
               <>
 
                 {/* Results Header */}
-                {activeMetric === "ICP" && collectionType === "periodica" && <Index chartDataPoints={chartDataPoints} setShowResults={setShowResults} />}
+                {activeMetric === "ICP" && collectionType === "periodica" && <ICPPEriodic chartDataPoints={chartDataPoints} setShowResults={setShowResults} />}
 
                 {activeMetric === "ICP" && collectionType === "range" && (
                   <>
@@ -1195,9 +1206,6 @@ export default function MetricsDashboard() {
 
                         {/* Pontos Selecionados */}
                         <div>
-                          <h4 className="mb-4 text-lg font-semibold text-slate-800">
-                            Pontos Selecionados
-                          </h4>
                           <SelectionPointsCard
                             debate={selectedPointsRangeICP.debate}
                             avaliacao={selectedPointsRangeICP.avaliacao}
@@ -1282,6 +1290,15 @@ export default function MetricsDashboard() {
                   selectedHistoryItem={selectedIAERangeHistoryItem}
                   onClose={handleSidebarClose}
                   IAERangeResponse={selectedIAERangeHistoryItem!}
+                />
+              </>
+            )}
+
+            {/* Analysis History - ICP */}
+            {collectionType === "periodica" && activeMetric == "ICP" && (
+              <>
+                <HistoricalCollectionsPanel
+                  historicalCollectionsData={historicalCollections}
                 />
               </>
             )}
