@@ -88,7 +88,8 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
 
         processed.push({
           periodic_icpid: periodicIcpId,
-          class_name: firstPoint.class_name,
+          journey_name: firstPoint.journey_name,
+          class_name: firstPoint.map_name,
           start_date: startDate,
           end_date: endDate,
           duration_minutes: durationMinutes,
@@ -264,7 +265,10 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
                   <History className="h-5 w-5 text-violet-600 dark:text-violet-400" />
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                      Coleta Histórica - {selectedHistoryItem.class_name}
+                      Jornada: {selectedHistoryItem.journey_name}
+                    </h2>
+                     <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                      Mapa: {selectedHistoryItem.class_name}
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
                       {format(
@@ -288,15 +292,7 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
 
             <div className="p-6 space-y-6">
               {/* Collection Info */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-violet-600 dark:text-violet-400">
-                    {selectedHistoryItem.duration_minutes}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    Minutos
-                  </div>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg text-center">
                   <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {selectedHistoryItem.total_data_points}

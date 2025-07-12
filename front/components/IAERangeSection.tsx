@@ -86,7 +86,7 @@ const IAERangeSection = ({ iaeRangeResponse }: IAERangeSectionProps) => {
 
   const myClass: Class = {
       journey_name: iaeRangeResponse?.journey_name,
-      map_Name: iaeRangeResponse?.map_name,
+      map_name: iaeRangeResponse?.map_name,
     };
 
   return (

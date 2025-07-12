@@ -61,14 +61,8 @@ const IAERangeHistorySidebar = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
             <div className="bg-white w-full max-w-4xl h-full overflow-y-auto shadow-2xl">
                 <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex items-center justify-between">
-                    <div>
-                        <h2 className="text-2xl font-bold text-slate-900">
-                            Análise Histórica Range
-                        </h2>
-                        <p className="text-slate-600">
-                            {selectedHistoryItem?.journey_name}
-                        </p>
-                    </div>
+                    <div className="flex-grow"></div>
+
                     <Button
                         variant="outline"
                         size="sm"

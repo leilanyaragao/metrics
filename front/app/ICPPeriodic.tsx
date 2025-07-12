@@ -60,6 +60,7 @@ import { Student } from "@/types/dashboard";
 import { useChartDataStats } from "@/components/useChartDataStats";
 import { SelectionPointsCard } from "./SelectPointsCard";
 import { WeightsCard } from "./WeightsCard";
+import { Informations } from "@/components/Informations";
 
 interface Props {
   chartDataPoints: ChartDataPoint[]
@@ -127,61 +128,48 @@ export default function ICPPEriodic({ chartDataPoints, setShowResults }: Props) 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50 dark:from-slate-900 dark:via-slate-800 dark:to-violet-900">
       {/* Header */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-violet-600 dark:text-violet-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  Dashboard ICP Escalável
-                </h1>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  Análise de Performance para N Estudantes e M Pontos Temporais
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700  z-10 p-4">
+        {/* Nova div para a linha superior (onde ficarão os badges à direita) */}
+        <div className="flex justify-end mb-2"> {/* `justify-end` empurra para a direita, `mb-2` adiciona margem inferior */}
+          <div className="flex items-center gap-2"> {/* Agrupa os badges */}
+            {/* Collection Status Indicator */}
+            {isCollectionActive ? (
               <Badge
-                variant="secondary"
-                className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"
+                variant="outline"
+                className="border-green-200 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-300 dark:bg-green-900/20 animate-pulse"
               >
-                {chartDataPoints[0]?.class_name}
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
+                Coleta Ativa
               </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="border-red-200 text-red-700 bg-red-50 dark:border-red-800 dark:text-red-300 dark:bg-red-900/20"
+              >
+                <Square className="h-3 w-3 mr-1" />
+                Coleta Finalizada
+              </Badge>
+            )}
 
-              {/* Collection Status Indicator */}
-              {isCollectionActive ? (
-                <Badge
-                  variant="outline"
-                  className="border-green-200 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-300 dark:bg-green-900/20 animate-pulse"
-                >
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
-                  Coleta Ativa
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="bozrder-red-200 text-red-700 bg-red-50 dark:border-red-800 dark:text-red-300 dark:bg-red-900/20"
-                >
-                  <Square className="h-3 w-3 mr-1" />
-                  Coleta Finalizada
-                </Badge>
-              )}
-
-              {stats.isLargeDataset && (
-                <Badge
-                  variant="outline"
-                  className="border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-800 dark:text-amber-300 dark:bg-amber-900/20"
-                >
-                  <Zap className="h-3 w-3 mr-1" />
-                  Otimizado
-                </Badge>
-              )}
-            </div>
+            {stats.isLargeDataset && (
+              <Badge
+                variant="outline"
+                className="border-amber-200 text-amber-700 bg-amber-50 dark:border-amber-800 dark:text-amber-300 dark:bg-amber-900/20"
+              >
+                <Zap className="h-3 w-3 mr-1" />
+                Otimizado
+              </Badge>
+            )}
           </div>
         </div>
+
+        {/* Informations na linha de baixo (fica por padrão à esquerda) */}
+        <Informations
+          informations={{
+            journey_name: chartDataPoints[0].journey_name,
+            map_name: chartDataPoints[0].map_name,
+          }}
+        />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

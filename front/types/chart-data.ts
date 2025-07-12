@@ -8,7 +8,8 @@ export interface User {
 
 export interface ChartDataPoint {
   map_id: string;
-  class_name: string;
+  map_name: string;
+  journey_name: string;
   periodic_collection: boolean;
   class_average_gap: number;
   class_average_rpp: number;
@@ -30,6 +31,7 @@ export interface ChartDataPoint {
   end_date: string;
   weight_gap: number;
   weight_rpp: number;
+
 }
 
 
@@ -53,6 +55,7 @@ export interface HistoricalCollectionsResponse {
 export interface ProcessedHistoricalCollection {
   periodic_icpid: string;
   class_name: string;
+  journey_name: string;
   start_date: string;
   end_date: string;
   duration_minutes: number;

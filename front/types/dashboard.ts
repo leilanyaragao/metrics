@@ -63,7 +63,7 @@ export interface ICPRange {
 
 export interface Class {
   journey_name: string,
-  map_Name: string,
+  map_name: string,
 }
 
 export interface Student {

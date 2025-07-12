@@ -401,7 +401,7 @@ export default function MetricsDashboard() {
 
             setSelectedClassRangeICP({
               journey_name: response.data.journey_name,
-              map_Name: response.data.map_name
+              map_name: response.data.map_name
             })
 
             const students = response.data.participation_consistency_per_users.map((value: any) => ({
@@ -612,10 +612,9 @@ export default function MetricsDashboard() {
                 {/* Description */}
                 <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
                   <p className="text-sm text-blue-800">
-                    <strong>Dashboard descritivo {activeMetric}:</strong>{" "}
                     {activeMetric === "ICP"
-                      ? "Análise do Índice de Consistência de Participação"
-                      : "Análise do Índice de Abandono Estruturado"}
+                      ? "Dashboard ICP: Análise do Índice de Consistência de Participação"
+                      : "Dashboard IAE: Análise do Índice de Abandono Estruturado"}
                   </p>
                 </div>
 

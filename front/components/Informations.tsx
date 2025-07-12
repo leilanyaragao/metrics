@@ -48,7 +48,7 @@ export const Informations: React.FC<InformationsStatsProps> = ({
               Mapa:
             </span>
             <Badge variant="outline" className="font-medium">
-              {informations.map_Name}
+              {informations.map_name}
             </Badge>
           </div>
 
