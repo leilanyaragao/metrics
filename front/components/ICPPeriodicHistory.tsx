@@ -240,7 +240,7 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
                       </div>
                       <div className="text-center p-1 bg-white/50 dark:bg-slate-800/50 rounded">
                         <div className="text-lg font-bold text-slate-900 dark:text-white">
-                          {collection.average_icp.toFixed(1)}%
+                          {collection.average_icp.toFixed(2)}%
                         </div>
                         <div className="text-xs text-slate-600 dark:text-slate-400">
                           ICP Médio
@@ -311,7 +311,7 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg text-center">
                   <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                    {selectedHistoryItem.average_icp.toFixed(1)}%
+                    {selectedHistoryItem.average_icp.toFixed(2)}%
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">
                     ICP Médio
@@ -342,7 +342,7 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
 
                         dataPoint.participation_consistency_per_users.forEach(
                           (user) => {
-                            baseData[user.user_id] = user.user_average_icp;
+                            baseData[user.user_id] = user.user_average_icp.toFixed(2);
                           },
                         );
 
@@ -437,7 +437,7 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
                             {user.user_name}
                           </div>
                           <div className="text-sm text-slate-600 dark:text-slate-400">
-                            ICP: {user.user_average_icp.toFixed(1)}%
+                            ICP: {user.user_average_icp.toFixed(2)}%
                           </div>
                         </div>
                       </div>

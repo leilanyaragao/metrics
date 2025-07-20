@@ -67,7 +67,8 @@ interface Props {
   setShowResults: Dispatch<SetStateAction<boolean>>
 }
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJlbWFpbF92YWxpZGF0ZWQiOnRydWUsInJvbGVzIjpbXSwibmFtZSI6IkxlaWxhbnkgVWxpc3NlcyIsImV4cCI6MTc1MjM2ODY4NCwiaWF0IjoxNzUyMzU0Mjg0fQ.arfEYP4jM4C64o9W7DoZUZuntiwZX4qYtsAro8fEczJVrrGggGdiNXaH8iPRXd-cUwPIv_AKH5g9wVhdIm75NQ"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJlbWFpbF92YWxpZGF0ZWQiOnRydWUsInJvbGVzIjpbXSwibmFtZSI6IkxlaWxhbnkgVWxpc3NlcyIsImV4cCI6MTc1Mjk4MzA2NywiaWF0IjoxNzUyOTY4NjY3fQ.6L3_mRpgK_nmn-wBHZ81L5X-SWq-artjjEPNje97NhkXrWgOtLF7oTZtDTvejMrOlS-XANydZX-KRi3-vK1ldw"
+
 export default function ICPPEriodic({ chartDataPoints, setShowResults }: Props) {
   const [selectedStudents, setSelectedStudents] = useState<Student[]>(
     [],

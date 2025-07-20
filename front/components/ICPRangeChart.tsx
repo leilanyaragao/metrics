@@ -26,7 +26,7 @@ export function ICPRangeChart({selectedStudents, currentHistoryItem}: PropsICPRa
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">{student.name}</span>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold">{student.averageICP}%</span>
+                <span className="text-sm font-bold">{student.averageICP?.toFixed(2)}%</span>
                 <span
                   className={`text-xs ${student.averageICP! > currentHistoryItem?.class_average_icp! ? "text-green-600" : "text-red-600"}`}
                 >
