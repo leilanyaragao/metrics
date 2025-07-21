@@ -1,5 +1,5 @@
 // components/HistoricalCollectionsPanel.tsx
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -22,11 +22,19 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ICPChart } from "./ICPChart";
-import { ProcessedHistoricalCollection, ChartDataPoint, User } from "../types/chart-data"; 
-import { ICPLegend } from "@/app/ICPLegend";
-import { WeightsCard } from "@/app/WeightsCard";
-import { SelectionPointsCard } from "@/app/SelectPointsCard";
+import { ProcessedHistoricalCollection, ChartDataPoint, User } from "../types/chart-data";
+import { ICPLegend } from "@/app/ICPLegend"; // Ajuste o caminho se necessário, parece correto
+import { WeightsCard } from "@/app/WeightsCard"; // Ajuste o caminho se necessário, parece correto
+import { SelectionPointsCard } from "@/app/SelectPointsCard"; // Ajuste o caminho se necessário, parece correto
 import { cn } from "@/lib/utils";
+import { Student } from "@/types/dashboard"; // Importe o tipo Student
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "@/components/ui/dropdown-menu";
+import { Command, CommandInput, CommandItem, CommandGroup } from "@/components/ui/command"; // For searchable list
+
 interface HistoricalCollectionsPanelProps {
   historicalCollectionsData: { [key: string]: ChartDataPoint[] };
 }
@@ -37,6 +45,39 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
   const [selectedHistoryItem, setSelectedHistoryItem] =
     useState<ProcessedHistoricalCollection | null>(null);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+
+  // NOVO ESTADO: IDs dos alunos selecionados para o gráfico histórico
+  const [selectedHistoricalStudentIds, setSelectedHistoricalStudentIds] = useState<string[]>([]);
+
+  // Efeito para resetar/inicializar a seleção de alunos do histórico
+  // SEMPRE que um novo item de histórico é selecionado ou o painel é aberto
+  useEffect(() => {
+    if (isHistoryPanelOpen && selectedHistoryItem) {
+      // Inicializa com um array vazio, para que nenhuma linha apareça por padrão
+      setSelectedHistoricalStudentIds([]);
+      // Se quisesse todos selecionados ao abrir:
+      // const allStudentIdsInThisCollection = Array.from(
+      //   new Map(
+      //     selectedHistoryItem.data.flatMap((d) =>
+      //       d.participation_consistency_per_users.map((u) => [u.user_id, u]),
+      //     ),
+      //   ).keys(),
+      // );
+      // setSelectedHistoricalStudentIds(allStudentIdsInThisCollection);
+    }
+  }, [isHistoryPanelOpen, selectedHistoryItem]);
+
+  // Handler para a seleção de alunos no seletor do histórico
+  const handleHistoricalStudentSelection = useCallback((studentId: string, isChecked: boolean) => {
+    setSelectedHistoricalStudentIds((prev) => {
+      if (isChecked) {
+        return Array.from(new Set([...prev, studentId]));
+      } else {
+        return prev.filter((id) => id !== studentId);
+      }
+    });
+  }, []);
+
 
   // Function to process historical collections from backend format
   const processHistoricalCollections = useMemo(() => {
@@ -62,11 +103,11 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
           new Date(endDate).getTime() - new Date(startDate).getTime();
         const durationMinutes = Math.round(durationMs / (1000 * 60));
 
-        // Get all unique students
-        const allStudents = new Map<string, User>();
+        // Get all unique students from this specific historical collection
+        const allStudentsInCollection = new Map<string, User>();
         dataPoints.forEach((point) => {
           point.participation_consistency_per_users.forEach((user) => {
-            allStudents.set(user.user_id, user);
+            allStudentsInCollection.set(user.user_id, user);
           });
         });
 
@@ -78,13 +119,11 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
 
         // Determine status (simplified logic, adjust as needed based on your backend logic)
         let status: "completed" | "stopped" | "error" = "completed";
-        // Example: if the last point's 'active' flag is false, consider it stopped
         if (lastPoint && lastPoint.active === false) {
           status = "stopped";
-        } else if (averageIcp < 40) { // Example: consider an error if average ICP is too low
+        } else if (averageIcp < 40) {
           status = "error";
         }
-
 
         processed.push({
           periodic_icpid: periodicIcpId,
@@ -94,7 +133,7 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
           end_date: endDate,
           duration_minutes: durationMinutes,
           total_data_points: dataPoints.length,
-          student_count: allStudents.size,
+          student_count: allStudentsInCollection.size,
           average_icp: averageIcp,
           data: sortedData,
           status,
@@ -114,6 +153,7 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
     (item: ProcessedHistoricalCollection) => {
       setSelectedHistoryItem(item);
       setIsHistoryPanelOpen(true);
+      // O useEffect acima cuidará da inicialização de selectedHistoricalStudentIds
     },
     [],
   );
@@ -121,9 +161,53 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
   const handleCloseHistoryPanel = useCallback(() => {
     setIsHistoryPanelOpen(false);
     setSelectedHistoryItem(null);
+    setSelectedHistoricalStudentIds([]); // Limpa a seleção ao fechar
   }, []);
 
   const firstDataPointOfSelectedItem = selectedHistoryItem?.data[0];
+
+  // Dados processados e alunos para o gráfico HISTÓRICO
+  const { processedHistoricalData, historicalStudentsAvailable } = useMemo(() => {
+    if (!selectedHistoryItem) {
+      return { processedHistoricalData: [], historicalStudentsAvailable: [] };
+    }
+
+    const processed: ChartDataPoint[] = selectedHistoryItem.data
+      .map((dataPoint) => {
+        const baseData: any = {
+          date: dataPoint.created_at,
+          timestamp: new Date(dataPoint.created_at).getTime(),
+          class_average_icp: dataPoint.class_average_icp,
+        };
+
+        dataPoint.participation_consistency_per_users.forEach(
+          (user) => {
+            baseData[user.user_id] = user.user_average_icp; // Não toFixed aqui, ICPChart lida com isso
+          },
+        );
+
+        return baseData;
+      })
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    const availableStudents: Student[] = Array.from(
+      new Map(
+        selectedHistoryItem.data.flatMap((d) =>
+          d.participation_consistency_per_users.map((u) => [
+            u.user_id,
+            { id: u.user_id, name: u.user_name, color: "" }, // Cor será gerada pelo ICPChart
+          ]),
+        ),
+      ).values(),
+    );
+
+    return { processedHistoricalData: processed, historicalStudentsAvailable: availableStudents };
+  }, [selectedHistoryItem]);
+
+  // Alunos que serão de fato exibidos no gráfico histórico (filtrados pela seleção do usuário)
+  const studentsToDisplayInHistory = useMemo(() => {
+    return historicalStudentsAvailable.filter(student => selectedHistoricalStudentIds.includes(student.id));
+  }, [historicalStudentsAvailable, selectedHistoricalStudentIds]);
 
 
   return (
@@ -136,7 +220,7 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
       >
         <CardHeader className="text-center pb-6">
           <CardTitle className="flex items-center justify-center gap-2 text-base text-slate-900 dark:text-white">
-            <History className="w-4 h-4 text-violet-600 dark:text-violet-400" /> {/* Using History icon */}
+            <History className="w-4 h-4 text-violet-600 dark:text-violet-400" />
             Histórico
           </CardTitle>
           <CardDescription className="text-slate-600 dark:text-slate-400">
@@ -148,8 +232,6 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
                 ? "Nenhum histórico encontrado"
                 : `${processHistoricalCollections.length} ${processHistoricalCollections.length === 1 ? "histórico encontrado" : "históricos encontrados"}`}
             </p>
-            {/* Pagination logic can be added here if needed, but not strictly necessary for just the count */}
-            {/* For example, if you want to show "Showing 1-X of Y" you'd need itemsPerPage, startIndex, endIndex, currentPage, totalPages logic */}
           </div>
         </CardHeader>
         <CardContent>
@@ -319,6 +401,60 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
                 </div>
               </div>
 
+
+              {/* Student Selector for Historical Chart */}
+             <Card>
+                   <CardHeader>
+                     <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">
+                       Selecionar Alunos para o Gráfico Histórico
+                     </CardTitle>
+                     <CardDescription className="text-slate-600 dark:text-slate-400">
+                       Escolha alunos para visualizar no gráfico desta coleta.
+                     </CardDescription>
+                   </CardHeader>
+                   <CardContent>
+                     <DropdownMenu>
+                       <DropdownMenuTrigger asChild>
+                         <Button variant="outline" className="w-full justify-between">
+                           Selecionar Alunos ({selectedHistoricalStudentIds.length})
+                           {/* You might add an icon here */}
+                         </Button>
+                       </DropdownMenuTrigger>
+                       <DropdownMenuContent className="w-64 p-0"> {/* Adjust width as needed */}
+                         <Command>
+                           <CommandInput placeholder="Buscar aluno..." />
+                           <CommandGroup className="max-h-48 overflow-y-auto">
+                             {historicalStudentsAvailable.length > 0 ? (
+                               historicalStudentsAvailable.map((student) => (
+                                 <CommandItem
+                                   key={student.id}
+                                   onSelect={() => handleHistoricalStudentSelection(student.id, !selectedHistoricalStudentIds.includes(student.id))}
+                                   className="flex items-center space-x-2 cursor-pointer"
+                                 >
+                                   <input
+                                     type="checkbox"
+                                     className="form-checkbox h-4 w-4 text-indigo-600 dark:text-indigo-400 rounded border-slate-300 dark:border-slate-600 focus:ring-indigo-500"
+                                     checked={selectedHistoricalStudentIds.includes(student.id)}
+                                     // onChange is handled by onSelect on CommandItem, but keep for visual state
+                                     readOnly // Prevent direct interaction with checkbox, let CommandItem handle click
+                                   />
+                                   <span className="text-sm text-slate-700 dark:text-slate-300 truncate" title={student.name}>
+                                     {student.name}
+                                   </span>
+                                 </CommandItem>
+                               ))
+                             ) : (
+                               <p className="text-slate-500 dark:text-slate-400 text-center py-4">
+                                 Nenhum aluno disponível.
+                               </p>
+                             )}
+                           </CommandGroup>
+                         </Command>
+                       </DropdownMenuContent>
+                     </DropdownMenu>
+                   </CardContent>
+                 </Card>
+
               {/* Historical Chart */}
               <Card>
                 <CardHeader>
@@ -330,67 +466,29 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
-                  {(() => {
-                    // Process historical data for chart
-                    const processedHistoricalData = selectedHistoryItem.data
-                      .map((dataPoint) => {
-                        const baseData: any = {
-                          date: dataPoint.created_at,
-                          timestamp: new Date(dataPoint.created_at).getTime(),
-                          class_average_icp: dataPoint.class_average_icp,
-                        };
-
-                        dataPoint.participation_consistency_per_users.forEach(
-                          (user) => {
-                            baseData[user.user_id] = user.user_average_icp.toFixed(2);
-                          },
-                        );
-
-                        return baseData;
-                      })
-                      .sort((a, b) => a.timestamp - b.timestamp);
-
-                    // Get all students from historical data
-                    const historicalStudents = Array.from(
-                      new Map(
-                        selectedHistoryItem.data.flatMap((d) =>
-                          d.participation_consistency_per_users.map((u) => [
-                            u.user_id,
-                            u,
-                          ]),
-                        ),
-                      ).values(),
-                    ).map((user, index) => ({
-                      id: user.user_id,
-                      name: user.user_name,
-                      color: `hsl(${(index * 137.5) % 360}, 70%, 50%)`,
-                    }));
-
-                    return (
-                      <ICPChart
-                        data={processedHistoricalData}
-                        selectedStudents={historicalStudents}
-                        totalStudents={selectedHistoryItem.student_count} // Use student_count from historical item
-                      />
-                    );
-                  })()}
+                  {/* Passa os dados processados e os alunos selecionados pelo NOVO seletor */}
+                  <ICPChart
+                    data={processedHistoricalData}
+                    selectedStudents={studentsToDisplayInHistory} // <--- AQUI A MUDANÇA MAIS IMPORTANTE
+                    totalStudents={selectedHistoryItem.student_count}
+                  />
                 </CardContent>
               </Card>
 
               {/* Pontos Selecionados */}
               <div>
                 <SelectionPointsCard
-                  debate={firstDataPointOfSelectedItem!!.divergence_point}
-                  avaliacao={firstDataPointOfSelectedItem!!.essay_point}
-                  decisao={firstDataPointOfSelectedItem!!.convergence_point}
+                  debate={firstDataPointOfSelectedItem?.divergence_point}
+                  avaliacao={firstDataPointOfSelectedItem?.essay_point}
+                  decisao={firstDataPointOfSelectedItem?.convergence_point}
                 />
               </div>
 
               {/* Pesos */}
               <WeightsCard
                 dynamicWeights={false}
-                weightX={firstDataPointOfSelectedItem!!.weight_gap}
-                weightY={firstDataPointOfSelectedItem!!.weight_rpp}
+                weightX={firstDataPointOfSelectedItem?.weight_gap}
+                weightY={firstDataPointOfSelectedItem?.weight_rpp}
                 weightXName="Peso do GAP"
                 weightXDescription="Mede a regularidade das participações, penalizando alunos que interagem de forma intercalada."
                 weightXAbbreviation="GAP"
@@ -399,31 +497,24 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
                 weightYAbbreviation="RPP"
               />
 
-
               {/* ICP Classification Information Card */}
               <ICPLegend />
 
-              {/* Historical Students List */}
+              {/* Historical Students List (Full List for reference) */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">
-                    Participantes da Coleta
+                    Todos os Participantes da Coleta
                   </CardTitle>
+                  <CardDescription className="text-slate-600 dark:text-slate-400">
+                    Lista completa de alunos desta coleta, independente da seleção do gráfico.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {Array.from(
-                      new Map(
-                        selectedHistoryItem.data.flatMap((d) =>
-                          d.participation_consistency_per_users.map((u) => [
-                            u.user_id,
-                            u,
-                          ]),
-                        ),
-                      ).values(),
-                    ).map((user, index) => (
+                    {historicalStudentsAvailable.map((student, index) => ( // Usa historicalStudentsAvailable
                       <div
-                        key={user.user_id}
+                        key={student.id}
                         className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg"
                       >
                         <div
@@ -434,10 +525,16 @@ export const HistoricalCollectionsPanel: React.FC<HistoricalCollectionsPanelProp
                         />
                         <div className="flex-1">
                           <div className="font-medium text-slate-900 dark:text-white">
-                            {user.user_name}
+                            {student.name}
                           </div>
+                          {/* Precisa buscar o ICP médio do aluno para esta coleta se quiser exibi-lo aqui */}
+                          {/* Você pode ajustar o `historicalStudentsAvailable` para incluir o ICP médio */}
                           <div className="text-sm text-slate-600 dark:text-slate-400">
-                            ICP: {user.user_average_icp.toFixed(2)}%
+                            ICP (Último ponto):{" "}
+                            {selectedHistoryItem?.data[selectedHistoryItem.data.length - 1]
+                              .participation_consistency_per_users
+                              .find(u => u.user_id === student.id)
+                              ?.user_average_icp.toFixed(2) || "N/A"}%
                           </div>
                         </div>
                       </div>

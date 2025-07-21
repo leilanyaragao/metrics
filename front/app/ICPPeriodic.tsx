@@ -67,7 +67,7 @@ interface Props {
   setShowResults: Dispatch<SetStateAction<boolean>>
 }
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJlbWFpbF92YWxpZGF0ZWQiOnRydWUsInJvbGVzIjpbXSwibmFtZSI6IkxlaWxhbnkgVWxpc3NlcyIsImV4cCI6MTc1Mjk4MzA2NywiaWF0IjoxNzUyOTY4NjY3fQ.6L3_mRpgK_nmn-wBHZ81L5X-SWq-artjjEPNje97NhkXrWgOtLF7oTZtDTvejMrOlS-XANydZX-KRi3-vK1ldw"
+const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJlbWFpbF92YWxpZGF0ZWQiOnRydWUsInJvbGVzIjpbXSwibmFtZSI6IkxlaWxhbnkgVWxpc3NlcyIsImV4cCI6MTc1MzE0MzAzMSwiaWF0IjoxNzUzMTI4NjMxfQ.-geNj9d6vXtrIR0phRWno3h2tNxr8Tj8vYdWV0gr1FdEQVvYd3AMRrhxwKMCdYEih24czR0soqkF7VK-3aec6w"
 
 export default function ICPPEriodic({ chartDataPoints, setShowResults }: Props) {
   const [selectedStudents, setSelectedStudents] = useState<Student[]>(
@@ -167,8 +167,8 @@ export default function ICPPEriodic({ chartDataPoints, setShowResults }: Props) 
         {/* Informations na linha de baixo (fica por padrão à esquerda) */}
         <Informations
           informations={{
-            journey_name: chartDataPoints[0].journey_name,
-            map_name: chartDataPoints[0].map_name,
+            journey_name: chartDataPoints[0]?.journey_name,
+            map_name: chartDataPoints[0]?.map_name,
           }}
         />
       </div>
