@@ -159,7 +159,7 @@ const IAERangeHistorySection = ({
                   )}
                   {item.essay_point && (
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 font-medium">
-                      Essay
+                      Avaliação
                     </span>
                   )}
                 </div>

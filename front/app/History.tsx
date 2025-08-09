@@ -7,7 +7,7 @@ interface HistoryProps {
   onSelectItem: (item: ICPRange) => void;
 }
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJyb2xlcyI6W10sIm5hbWUiOiJMZWlsYW55IFVsaXNzZXMiLCJleHAiOjE3NTA2NTg2ODMsImlhdCI6MTc1MDY0NDI4M30.z4Pc-7bney3rXNnKd21zPOeHSJx5JDFznyiB6Wq9hkDvroY9iwy4KvBMp_FotGPNhWiNKn1e9SOlAlQxNT6E-g"
+const accessToken = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
 
 
 export const History: React.FC<HistoryProps> = ({ onSelectItem }) => {
@@ -23,7 +23,7 @@ export const History: React.FC<HistoryProps> = ({ onSelectItem }) => {
 
     try {
       const response = await axios.get("http://localhost:8095/v1/metrics/icp/periodic/in-progress",
-        { headers: { Authorization: `Bearer ${acessToken}` } })
+        { headers: { Authorization: `Bearer ${accessToken}` } })
 
 
       const apiData = await response.data();

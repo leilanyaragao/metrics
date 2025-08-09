@@ -45,7 +45,7 @@ import IAERangeHistorySidebar from "@/components/IAERangeHistorySidebar"
 import { HistoricalCollectionsPanel } from "@/components/ICPPeriodicHistory"
 
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJlbWFpbF92YWxpZGF0ZWQiOnRydWUsInJvbGVzIjpbXSwibmFtZSI6IkxlaWxhbnkgVWxpc3NlcyIsImV4cCI6MTc1MzE0MzAzMSwiaWF0IjoxNzUzMTI4NjMxfQ.-geNj9d6vXtrIR0phRWno3h2tNxr8Tj8vYdWV0gr1FdEQVvYd3AMRrhxwKMCdYEih24czR0soqkF7VK-3aec6w"
+const accessToken = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
 
 interface RangeDatesICP {
   map_id: string
@@ -200,7 +200,7 @@ export default function MetricsDashboard() {
     []
   )
   useEffect(() => {
-    axios.get("http://localhost:8095/v1/metrics/journeys/my", { headers: { Authorization: `Bearer ${acessToken}` } }).then(
+    axios.get("http://localhost:8095/v1/metrics/journeys/my", { headers: { Authorization: `Bearer ${accessToken}` } }).then(
       value => setJourneys(value.data))
   },
     [])
@@ -291,12 +291,12 @@ export default function MetricsDashboard() {
 
       //Ve se tem algum existente
       response = await axios.get("http://localhost:8095/v1/metrics/icp/periodic/in-progress",
-        { headers: { Authorization: `Bearer ${acessToken}` } })
+        { headers: { Authorization: `Bearer ${accessToken}` } })
       
       //Pegar historico ICP Periodico
         const historyResponse = await axios.get(
         "http://localhost:8095/v1/metrics/icp/periodic/history",
-        { headers: { Authorization: `Bearer ${acessToken}` } }
+        { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       setHistoricalCollections(historyResponse.data);
 
@@ -317,7 +317,7 @@ export default function MetricsDashboard() {
       if (metric == "ICP") {
         try {
           response = await axios.get("http://localhost:8095/v1/metrics/icp/range/history",
-            { headers: { Authorization: `Bearer ${acessToken}` } })
+            { headers: { Authorization: `Bearer ${accessToken}` } })
           console.log("icp")
           setICPRangeHistoryResponse(response.data)
         }
@@ -329,7 +329,7 @@ export default function MetricsDashboard() {
       else {
         try {
           response = await axios.get("http://localhost:8095/v1/metrics/iae/range/history",
-            { headers: { Authorization: `Bearer ${acessToken}` } })
+            { headers: { Authorization: `Bearer ${accessToken}` } })
           console.log("iae")
           setIAERangeHistoryResponse(response.data)
         }
@@ -378,7 +378,7 @@ export default function MetricsDashboard() {
         }
 
         axios.post("http://localhost:8095/v1/metrics/icp/range", newRangeDatesICP, {
-          headers: { Authorization: `Bearer ${acessToken}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         })
           .then(response => {
             // Verifica se os dados estão completos
@@ -452,7 +452,7 @@ export default function MetricsDashboard() {
 
         axios.post("http://localhost:8095/v1/metrics/iae/range",
           newRangeDatesIAE,
-          { headers: { Authorization: `Bearer ${acessToken}` } }).
+          { headers: { Authorization: `Bearer ${accessToken}` } }).
           then(response => {
             if (!response.data) {
               setShowResults(false)
@@ -511,7 +511,7 @@ export default function MetricsDashboard() {
 
           axios.post("http://localhost:8095/v1/metrics/icp/periodic",
             newRangeDatesICP,
-            { headers: { Authorization: `Bearer ${acessToken}` } })
+            { headers: { Authorization: `Bearer ${accessToken}` } })
         }
       }
 

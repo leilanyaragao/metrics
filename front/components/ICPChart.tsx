@@ -167,7 +167,7 @@ export function ICPChart({ data, selectedStudents, totalStudents }: ICPChartProp
                   </span>
                 </div>
                 <span className="text-sm font-bold ml-2 flex-shrink-0">
-                  {entry.value}%
+                  {entry.value.toFixed(2)}%
                 </span>
               </div>
             ))}

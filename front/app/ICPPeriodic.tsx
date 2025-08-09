@@ -67,7 +67,7 @@ interface Props {
   setShowResults: Dispatch<SetStateAction<boolean>>
 }
 
-const acessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJsZWlsYW55LnVsaXNzZXNAdGRzLmNvbXBhbnkiLCJ1aWQiOiI2NjdiMWJlZjIzYzY5ZTY2ZjM0MzYyYjciLCJlbWFpbF92YWxpZGF0ZWQiOnRydWUsInJvbGVzIjpbXSwibmFtZSI6IkxlaWxhbnkgVWxpc3NlcyIsImV4cCI6MTc1MzE0MzAzMSwiaWF0IjoxNzUzMTI4NjMxfQ.-geNj9d6vXtrIR0phRWno3h2tNxr8Tj8vYdWV0gr1FdEQVvYd3AMRrhxwKMCdYEih24czR0soqkF7VK-3aec6w"
+const accessToken = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
 
 export default function ICPPEriodic({ chartDataPoints, setShowResults }: Props) {
   const [selectedStudents, setSelectedStudents] = useState<Student[]>(
@@ -84,7 +84,7 @@ export default function ICPPEriodic({ chartDataPoints, setShowResults }: Props) 
       setIsStoppingCollection(true);
 
       const response = await axios.patch("http://localhost:8095/v1/metrics/icp/periodic/stop", {},
-        { headers: { Authorization: `Bearer ${acessToken}` } })
+        { headers: { Authorization: `Bearer ${accessToken}` } })
 
       // Assuming a successful stop, you might want to hide the current results
       // and let the parent page handle the overall state or redirect
@@ -492,7 +492,7 @@ export default function ICPPEriodic({ chartDataPoints, setShowResults }: Props) 
                             )}
                           </td>
                           <td className="py-3 px-4 text-violet-600 dark:text-violet-400 font-semibold">
-                            {point.class_average_icp.toFixed(1)}%
+                            {point.class_average_icp.toFixed(2)}%
                           </td>
                           {selectedStudents.slice(0, 10).map((student) => {
                             const studentIcp = point[student.id] as number;
