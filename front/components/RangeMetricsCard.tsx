@@ -158,8 +158,8 @@ const RangeMetricsCards = ({ data }: RangeMetricsCardsProps) => {
 
   const metrics = [
     {
-      key: "ICP",
-      title: "ICP - Índice de Consistência de Participação",
+      key: "IAE",
+      title: "IAE - Índice de Abandono Estruturado",
       value: averages.iae, // Using IAE value for ICP calculation
       color: "#3B82F6",
       bgColor: "bg-blue-50",
@@ -210,7 +210,7 @@ const RangeMetricsCards = ({ data }: RangeMetricsCardsProps) => {
     },
     {
       key: "TAP",
-      title: "TAP - Tempo de Adequação do Ponto",
+      title: "TAP - Taxa de Abandono Relativa ao Ponto",
       value: averages.tap,
       color: "#10B981",
       bgColor: "bg-emerald-50",
@@ -256,8 +256,8 @@ const RangeMetricsCards = ({ data }: RangeMetricsCardsProps) => {
       ],
     },
     {
-      key: "TA-PROG",
-      title: "TA-PROG - Tempo de Adequação Progressiva",
+      key: "TAprog",
+      title: "TAprog - Taxa de Abandono Progressivo",
       value: averages.ta_prog,
       color: "#F59E0B",
       bgColor: "bg-amber-50",
